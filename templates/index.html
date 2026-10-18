@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cartoon Jack</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:16px;background:#f4f8ef;color:#1d2b1a}
+h1{margin-bottom:4px}.panel{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px #0002;margin-bottom:16px}
+label{display:block;margin:10px 0 4px;font-weight:600}select,input[type=file]{width:100%;padding:8px}
+button{background:#2e7d32;color:#fff;border:0;border-radius:8px;padding:12px 20px;font-size:1rem;cursor:pointer;margin-top:14px}
+button:disabled{opacity:.5;cursor:wait}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}figure{margin:0}img{width:100%;border-radius:8px;background:#e6eddf;aspect-ratio:1}
+figcaption{font-size:.9rem;margin-top:6px}.err{color:#b00020}
+</style></head><body>
+<h1>Cartoon yourself into Jack and the Beanstalk</h1>
+<div class="panel">
+  <label for="photo">Your photo (a clear, front-facing face works best)</label>
+  <input type="file" id="photo" accept="image/jpeg,image/png,image/webp">
+  <label for="style">Cartoon style</label>
+  <select id="style">{% for s in styles %}<option value="{{s}}">{{s|capitalize}}</option>{% endfor %}</select>
+  <label for="intensity">Cartoon intensity</label>
+  <select id="intensity"><option value="subtle">Subtle</option><option value="medium" selected>Medium</option><option value="strong">Strong</option></select>
+  <label for="outline">Outline thickness</label>
+  <select id="outline"><option>thin</option><option selected>medium</option><option>thick</option></select>
+  <button id="go">Generate both scenes</button>
+  <p id="status"></p>
+</div>
+<div class="grid">
+{% for id, spec in scenes.items() %}
+  <figure id="fig-{{id}}"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><figcaption>{{spec}}</figcaption></figure>
+{% endfor %}
+</div>
+<script>
+const ids = {{ scenes.keys()|list|tojson }};
+const $ = id => document.getElementById(id);
+$("go").onclick = async () => {
+  const file = $("photo").files[0];
+  if (!file) { $("status").textContent = "Choose a photo first."; return; }
+  $("go").disabled = true; $("status").className = ""; $("status").textContent = "Generating (about a minute)...";
+  // One request per scene, fired together (Promise.all; no loop around retries).
+  const jobs = [
+    generate("planting", file),
+    generate("climbing", file),
+  ];
+  const results = await Promise.allSettled(jobs);
+  const failed = results.filter(r => r.status === "rejected");
+  $("status").textContent = failed.length ? failed.map(f => f.reason.message).join(" ") : "Done.";
+  if (failed.length) $("status").className = "err";
+  $("go").disabled = false;
+};
+async function generate(scene, file) {
+  const fd = new FormData();
+  fd.append("photo", file); fd.append("scene", scene);
+  for (const k of ["style", "intensity", "outline"]) fd.append(k, $(k).value);
+  const r = await fetch("/generate", { method: "POST", body: fd });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || "Failed");
+  const fig = $("fig-" + scene);
+  fig.querySelector("img").src = j.image;
+  fig.querySelector("figcaption").textContent = j.caption;
+}
+</script></body></html>

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: jack-beanstalk
+    runtime: python
+    buildCommand: pip install uv && uv sync --no-dev
+    startCommand: uv run gunicorn app:app --timeout 180
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false

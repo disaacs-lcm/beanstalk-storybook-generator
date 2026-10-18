@@ -1,0 +1,11 @@
+[project]
+name = "jack-beanstalk"
+version = "0.1.0"
+description = "Cartoon yourself into Jack and the Beanstalk"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+    "requests>=2.31",
+    "gunicorn>=22.0",
+    "python-dotenv>=1.0",
+]
