@@ -23,28 +23,35 @@ SCENES = {
 }
 
 STYLES = {
-    "pixar": "3D animated movie style (Pixar-like), soft lighting, smooth shading",
-    "comic": "bold comic-book style with thick ink outlines and flat colors",
-    "anime": "anime style with clean linework and cel shading",
-    "storybook": "hand-painted children's storybook illustration, watercolor texture",
+    "pixar": "a 3D animated feature-film character render (Pixar-like), with stylized proportions, "
+             "sculpted simplified features and soft painted lighting",
+    "comic": "a hand-inked comic-book illustration with bold black ink outlines, flat color fills and halftone shading",
+    "anime": "a 2D anime illustration with clean linework, large expressive eyes and flat cel shading",
+    "storybook": "a hand-painted children's storybook illustration with visible brush strokes and watercolor texture",
 }
 
 INTENSITY = {
-    "subtle": "Keep proportions and details very close to the real face; only lightly stylized.",
-    "medium": "Clearly cartoonish, but keep the face's distinguishing features.",
-    "strong": "Strongly stylized and exaggerated, but still recognizably the same person.",
+    "subtle": "Lightly stylized: realistic proportions, but every surface is drawn or painted, never photographic.",
+    "medium": "Clearly cartoonish: simplified shapes, slightly enlarged head and eyes.",
+    "strong": "Strongly exaggerated: big head, big expressive eyes, simplified bold shapes.",
 }
 
 
 def build_prompt(scene_spec, style, intensity, outline):
     return (
-        f"Redraw the person in the provided photo as a cartoon character, and place them in this scene. "
-        f"Scene: {scene_spec} The character is Jack from the fairy tale 'Jack and the Beanstalk'. "
+        f"Create a brand-new illustration of Jack from the fairy tale 'Jack and the Beanstalk'. "
+        f"Scene: {scene_spec} "
         f"Art style: {STYLES[style]}. {INTENSITY[intensity]} Outline thickness: {outline}. "
-        f"IMPORTANT: preserve this person's identity exactly: same face shape, eyes, nose, mouth, eyebrows, "
-        f"skin tone, hair color and hairstyle, facial hair, glasses, and apparent age and gender. "
-        f"The scene must show exactly what the scene description says and nothing contradictory. "
-        f"Only one main character. No text, captions, or watermarks in the image."
+        f"The attached photo is ONLY a reference for who Jack looks like. Do not edit, trace, or paste the photo. "
+        f"Draw the face as a cartoon: no photorealistic skin, pores, or photographic lighting anywhere in the image. "
+        f"Do not copy the photo's pose, crop, camera angle, head size, background or clothing. "
+        f"Instead, show Jack's whole body in the pose the scene requires, wearing a simple storybook "
+        f"peasant outfit, with his head about one-fifth to one-quarter of his body height, "
+        f"inside the full scene and its background. "
+        f"Carry over these identity features from the photo in cartoon form: face shape, eye shape and color, "
+        f"nose, eyebrows, skin tone, hair color and hairstyle, facial hair, glasses, and apparent age and gender. "
+        f"The picture must show exactly what the scene says and nothing that contradicts it. "
+        f"One main character. No text, captions, or watermarks in the image."
     )
 
 
