@@ -47,6 +47,17 @@ def build_prompt(scene_spec, style, intensity, outline):
     )
 
 
+def sniff_image(data):
+    """Identify the image type from its first bytes instead of trusting the browser's MIME type."""
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg", "jpg"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png", "png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp", "webp"
+    return None
+
+
 @app.get("/")
 def index():
     return render_template("index.html", scenes=SCENES, styles=list(STYLES))
@@ -58,16 +69,24 @@ def generate():
     if not key:
         return jsonify(error="Server is missing OPENAI_API_KEY."), 500
 
-    photo = request.files.get("photo")
     scene_id = request.form.get("scene")
     style = request.form.get("style", "pixar")
     intensity = request.form.get("intensity", "medium")
     outline = request.form.get("outline", "medium")
-    if not photo or scene_id not in SCENES or style not in STYLES or intensity not in INTENSITY \
-            or outline not in ("thin", "medium", "thick"):
-        return jsonify(error="Invalid request."), 400
-    if photo.mimetype not in ("image/jpeg", "image/png", "image/webp"):
-        return jsonify(error="Upload a JPEG, PNG, or WebP photo."), 400
+    for name, value, allowed in (("scene", scene_id, SCENES), ("style", style, STYLES),
+                                 ("intensity", intensity, INTENSITY), ("outline", outline, ("thin", "medium", "thick"))):
+        if value not in allowed:
+            return jsonify(error=f"Unknown {name} setting: {value!r}. Reload the page and try again."), 400
+
+    # `if not photo` is False for an empty filename, so check for None and read the bytes instead.
+    photo = request.files.get("photo")
+    data = photo.read() if photo is not None else b""
+    if not data:
+        return jsonify(error="No photo was received. Choose your photo again."), 400
+    kind = sniff_image(data)
+    if kind is None:
+        return jsonify(error="Upload a JPEG, PNG, or WebP photo (HEIC from iPhones is not supported)."), 400
+    mimetype, ext = kind
 
     scene_spec = SCENES[scene_id]
     prompt = build_prompt(scene_spec, style, intensity, outline)
@@ -77,7 +96,7 @@ def generate():
         API_URL,
         headers={"Authorization": f"Bearer {key}"},
         data={"model": IMAGE_MODEL, "prompt": prompt, "size": "1024x1024", "quality": "low", "n": "1"},
-        files={"image": (photo.filename or "photo", photo.read(), photo.mimetype)},
+        files={"image": (f"photo.{ext}", data, mimetype)},
         timeout=170,
     )
     if resp.status_code != 200:
