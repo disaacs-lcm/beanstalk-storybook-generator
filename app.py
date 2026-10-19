@@ -1,5 +1,8 @@
 import base64
 import os
+import threading
+import time
+from collections import defaultdict, deque
 
 import requests
 from dotenv import load_dotenv
@@ -13,6 +16,11 @@ app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload cap
 # GPT Image 2.5 "flare": same token price as "sunburst"; quality "low" keeps each image around a cent.
 IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-2.5-flare")
 API_URL = "https://api.openai.com/v1/images/edits"
+
+# Per-visitor limit on images (each click makes two). Kept in memory, so it resets when the server restarts.
+RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "6"))
+_hits = defaultdict(deque)
+_hits_lock = threading.Lock()
 
 # The two required scenes. The scene spec is sent to the model and shown as the caption.
 SCENES = {
@@ -66,6 +74,24 @@ def sniff_image(data):
     return None
 
 
+def client_ip():
+    # Render sits behind Cloudflare, which sets CF-Connecting-IP and overwrites any value the client sends.
+    return request.headers.get("CF-Connecting-IP") or request.remote_addr or "unknown"
+
+
+def seconds_until_allowed(ip):
+    """Record a hit for this IP and return 0, or return how long to wait if the hourly limit is used up."""
+    now = time.monotonic()
+    with _hits_lock:
+        hits = _hits[ip]
+        while hits and now - hits[0] >= 3600:
+            hits.popleft()
+        if len(hits) >= RATE_LIMIT_PER_HOUR:
+            return 3600 - (now - hits[0])
+        hits.append(now)
+        return 0
+
+
 @app.get("/")
 def index():
     return render_template("index.html", scenes=SCENES, styles=list(STYLES))
@@ -95,6 +121,13 @@ def generate():
     if kind is None:
         return jsonify(error="Upload a JPEG, PNG, or WebP photo (HEIC from iPhones is not supported)."), 400
     mimetype, ext = kind
+
+    # Checked last, so rejected uploads don't use up a visitor's allowance.
+    wait = seconds_until_allowed(client_ip())
+    if wait:
+        minutes = int(wait // 60) + 1
+        return jsonify(error=f"You've reached the limit of {RATE_LIMIT_PER_HOUR} images per hour. "
+                             f"Try again in {minutes} minute{'s' if minutes != 1 else ''}."), 429
 
     scene_spec = SCENES[scene_id]
     prompt = build_prompt(scene_spec, style, intensity, outline)
