@@ -10,7 +10,8 @@ load_dotenv()  # reads .env locally; on Render the key comes from its environmen
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload cap
 
-IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-1-mini")
+# GPT Image 2.5 "flare": same token price as "sunburst"; quality "low" keeps each image around a cent.
+IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-2.5-flare")
 API_URL = "https://api.openai.com/v1/images/edits"
 
 # The two required scenes. The scene spec is sent to the model and shown as the caption.
