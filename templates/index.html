@@ -89,13 +89,20 @@ button.go:disabled{background:#6f9f82; cursor:progress; transform:none; box-shad
 .panel[data-state=error] .state{display:block; background:#fff; color:var(--bad)}
 .slate{margin:12px 0 0; padding:9px 11px; background:var(--ink); color:#fff; border-radius:6px; font-size:.95rem; line-height:1.4}
 .slate b{color:var(--sun)}
-.save{display:none; margin-top:10px; font-weight:800; color:var(--ink)}
+.panel-actions{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-top:12px}
+button.one{font:400 1rem var(--display); padding:7px 14px; color:var(--ink); background:var(--sun);
+  border:2px solid var(--ink); border-radius:8px; box-shadow:3px 3px 0 var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s}
+button.one:hover{transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink)}
+button.one:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+button.one:focus-visible{outline:3px solid var(--bean); outline-offset:3px}
+button.one:disabled{opacity:.6; cursor:progress; transform:none; box-shadow:3px 3px 0 var(--ink)}
+.save{display:none; font-weight:800; color:var(--ink)}
 .panel[data-state=done] .save{display:inline-block}
 .save:focus-visible{outline:3px solid var(--bean)}
 
 @media (prefers-reduced-motion:reduce){
   .panel[data-state=loading] .sketch path{animation:none; stroke-dashoffset:0}
-  button.go{transition:none}
+  button.go, button.one{transition:none}
 }
 </style>
 </head>
@@ -103,7 +110,7 @@ button.go:disabled{background:#6f9f82; cursor:progress; transform:none; box-shad
 <div class="wrap">
   <header>
     <h1>Beanstalk Cartoon Studio</h1>
-    <p class="lede">Upload a photo and we redraw you as Jack, then place you in two scenes from the story.</p>
+    <p class="lede">Upload a photo and we redraw you as Jack in two scenes from the story. Draw both at once, or one scene at a time.</p>
   </header>
 
   {% set titles = {"planting":"Planting the seeds","climbing":"Climbing the beanstalk"} %}
@@ -159,7 +166,10 @@ button.go:disabled{background:#6f9f82; cursor:progress; transform:none; box-shad
           <div class="state" id="state-{{id}}">Inking...</div>
         </div>
         <p class="slate"><b>Scene:</b> <span class="caption">{{ spec }}</span></p>
-        <a class="save" download="jack-{{id}}.png">Save this image</a>
+        <div class="panel-actions">
+          <button class="one" type="button" data-scene="{{id}}" id="one-{{id}}">Draw scene {{ loop.index }}</button>
+          <a class="save" download="jack-{{id}}.png">Save this image</a>
+        </div>
       </article>
       {% endfor %}
     </section>
@@ -182,25 +192,37 @@ function showPreview() {
   drop.classList.add("has");
 }
 const val = name => document.querySelector(`input[name=${name}]:checked`).value;
+const num = scene => scenes.indexOf(scene) + 1;
+const busy = new Set();
 function setState(scene, state, msg) {
   $("panel-" + scene).dataset.state = state;
   $("state-" + scene).textContent = msg || "Inking...";
+  if (state === "done") $("one-" + scene).textContent = `Redraw scene ${num(scene)}`;
+}
+function refreshButtons() {
+  go.disabled = busy.size > 0;
+  scenes.forEach(s => { $("one-" + s).disabled = busy.has(s); });
 }
 
-go.onclick = async () => {
+go.onclick = () => run(scenes);
+scenes.forEach(s => { $("one-" + s).onclick = () => run([s]); });
+
+async function run(list) {
   const file = photo.files[0];
   status.className = "";
-  if (!file) { status.textContent = "Choose a photo first."; status.className = "err"; return; }
-  go.disabled = true;
-  status.textContent = "Both scenes are being drawn. This takes about a minute.";
-  scenes.forEach(s => setState(s, "loading"));
-  // One request per scene, fired together. Each request makes exactly one API call; no retries.
-  const results = await Promise.allSettled(scenes.map(s => draw(s, file)));
+  if (!file) { status.textContent = "Choose a photo first."; status.className = "err"; photo.focus(); return; }
+  const label = list.length > 1 ? "Both scenes are" : `Scene ${num(list[0])} is`;
+  list.forEach(s => { busy.add(s); setState(s, "loading"); });
+  refreshButtons();
+  status.textContent = `${label} being drawn. This takes about a minute.`;
+  // One request per scene. Each request makes exactly one API call; no retries.
+  const results = await Promise.allSettled(list.map(s => draw(s, file)));
+  list.forEach(s => busy.delete(s));
+  refreshButtons();
   const failed = results.filter(r => r.status === "rejected");
-  status.textContent = failed.length ? failed.map(f => f.reason.message).join(" ") : "Done. Both scenes are ready.";
+  status.textContent = failed.length ? failed.map(f => f.reason.message).join(" ") : `Done. ${label} ready.`;
   if (failed.length) status.className = "err";
-  go.disabled = false;
-};
+}
 
 async function draw(scene, file) {
   const fd = new FormData();
