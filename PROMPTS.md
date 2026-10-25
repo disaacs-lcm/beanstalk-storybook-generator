@@ -1,4 +1,4 @@
-# Prompts (draft 1, for testing in the OpenAI Playground)
+# Prompts (draft 2, for testing in the OpenAI Playground)
 
 Paste these into the Playground by hand before they go into the code.
 After each try, note what was wrong under "Playground notes" and revise.
@@ -34,7 +34,7 @@ No text, letters, or labels anywhere in the image.
 
 ## Pages (attach: the character reference from step 0)
 
-Every page prompt has the same opening and closing; only the scene and composition lines change.
+Every page prompt has the same opening and closing; only the scene, mood, and composition lines change.
 
 ### Page 1: the empty cupboard
 
@@ -46,6 +46,7 @@ Style: Modern 3D animated feature — rounded forms, large expressive eyes, soft
 The boy in the attached reference image is Jack. Keep his face, hair, and outfit exactly as in the reference.
 Scene: Jack and his mother stand in a bare cottage kitchen beside an empty, open cupboard. Through the open door, Milky-White the cow is visible outside.
 Jack's full face is front-lit, and he is looking at his mother.
+Mood: Worried and sad. Jack's mother looks tired and anxious, her shoulders slumped. Jack looks up at her with a worried face. No smiles, but gentle rather than frightening, since this is a children's book.
 Composition: keep the lower third of the image quiet and uncluttered (plain floorboards) so text can sit there.
 Do not draw any text, letters, or signs.
 ```
@@ -60,6 +61,7 @@ Style: Modern 3D animated feature — rounded forms, large expressive eyes, soft
 The boy in the attached reference image is Jack. Keep his face, hair, and outfit exactly as in the reference.
 Scene: a dirt road leading to market. An old man holds out five coloured beans in his open palm. Jack holds Milky-White the cow by a rope.
 Jack is in three-quarter view, wearing the same clothes as in the reference.
+Mood: Jack is curious and tempted, eyes wide at the beans. The old man smiles slyly, as if he knows a secret.
 Composition: keep the sky in the top third of the image clear and simple so text can sit there.
 Do not draw any text, letters, or signs.
 ```
@@ -74,6 +76,7 @@ Style: Modern 3D animated feature — rounded forms, large expressive eyes, soft
 The boy in the attached reference image is Jack. Keep his face, hair, and outfit exactly as in the reference.
 Scene: the cottage at dusk. Jack's mother throws the beans out of a window, and they scatter into the garden below. Jack stands in the doorway, watching.
 Use a darker dusk palette than the daytime pages: deep blues and purples, with warm light from the window.
+Mood: Jack's mother is angry and frustrated. Jack looks shocked and dismayed, his mouth open. No smiles.
 Composition: keep the dark grass in the lower third calm and uncluttered so text can sit there.
 Do not draw any text, letters, or signs.
 ```
@@ -86,4 +89,5 @@ Not built yet. It follows the same template, with "Scene:" and "Composition:" li
 
 | Try | Prompt | What came back | What to change |
 |-----|--------|----------------|----------------|
+| 1 | Page 1 (draft 1) | Jack and his mother look happy, which contradicts "nothing left to sell" | Added a Mood line to every page: worried on page 1, tempted on page 2, angry and shocked on page 3 |
 |     |        |                |                |

@@ -48,6 +48,7 @@ PAGES = [
                  "Jack's full face is front-lit, and he is looking at his mother.",
         "composition": "keep the lower third of the image quiet and uncluttered (plain floorboards) "
                        "so text can sit there.",
+        "mood": "Worried and sad. Jack's mother looks tired and anxious, her shoulders slumped. Jack looks up at her with a worried face. No smiles, but gentle rather than frightening, since this is a children's book.",
         "text_zone": "bottom",
         "tone": "light",
     },
@@ -59,6 +60,7 @@ PAGES = [
                  "Jack holds Milky-White the cow by a rope.\n"
                  "Jack is in three-quarter view, wearing the same clothes as in the reference.",
         "composition": "keep the sky in the top third of the image clear and simple so text can sit there.",
+        "mood": "Jack is curious and tempted, eyes wide at the beans. The old man smiles slyly, as if he knows a secret.",
         "text_zone": "top",
         "tone": "light",
     },
@@ -71,6 +73,7 @@ PAGES = [
                  "Use a darker dusk palette than the daytime pages: deep blues and purples, "
                  "with warm light from the window.",
         "composition": "keep the dark grass in the lower third calm and uncluttered so text can sit there.",
+        "mood": "Jack's mother is angry and frustrated. Jack looks shocked and dismayed, his mouth open. No smiles.",
         "text_zone": "bottom",
         "tone": "dark",
     },
@@ -84,6 +87,7 @@ def page_prompt(page):
         f"Style: {STYLE}\n"
         "The boy in the attached reference image is Jack. Keep his face, hair, and outfit exactly as in the reference.\n"
         f"Scene: {page['scene']}\n"
+        f"Mood: {page['mood']}\n"
         f"Composition: {page['composition']}\n"
         "Do not draw any text, letters, or signs."
     )
