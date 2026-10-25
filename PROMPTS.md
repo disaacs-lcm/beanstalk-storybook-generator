@@ -22,11 +22,11 @@ Modern 3D animated feature — rounded forms, large expressive eyes, soft rim li
 
 | Element | Pages | How |
 |---|---|---|
-| jack | 1, 2, 3 | Face from the reference image, plus the description |
+| jack | cover, 1, 2, 3 | Face from the reference image, plus the description |
 | mother | 1, 3 | Face from the reference image, plus the description |
 | cow | 1, 2 | Description only |
-| cottage | 1, 3 | Description only |
-| beans | 2, 3 | Description only |
+| cottage | cover, 1, 3 | Description only |
+| beans | cover, 2, 3 | Description only |
 
 Descriptions, used word for word on every page where the element appears:
 
@@ -51,6 +51,24 @@ No text, letters, or labels anywhere in the image.
 ```
 
 ## Pages (attach: the face reference from step 0)
+
+### Front cover
+
+Attach: the left half of the reference (Jack only). The title and the child's name are drawn by the PDF layer.
+
+```
+Children's picture-book page illustration.
+Style: Modern 3D animated feature — rounded forms, large expressive eyes, soft rim light.
+The attached reference shows Jack's face. Keep his face and hair exactly as in the reference; his expression follows the Mood line below.
+These appear elsewhere in the book too, so draw them exactly as described:
+- Jack wears a patched brown wool tunic, a rope belt, green trousers, and worn leather boots.
+- The cottage is a small one-story stone cottage with a thatched roof, a wooden front door, and one small window beside the door (one story only, no upper floor).
+- The magic beans are five smooth beans, each a different bright color (red, orange, green, blue, and purple), each about the size of a fingernail, with a faint sparkle.
+Scene: a grassy hill in front of the cottage in golden morning light. Jack stands in the lower middle of the picture, holding one of the magic beans up in his open palm and gazing at it. Behind the cottage, a giant beanstalk curls up into the clouds.
+Mood: Hopeful and full of wonder. Jack smiles.
+Composition: keep the sky in the top third of the image clear and simple so the book title can sit there.
+Do not draw any text, letters, or signs.
+```
 
 ### Page 1: The empty cupboard
 

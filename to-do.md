@@ -11,4 +11,5 @@ What in this build still needs work.
 - The story assumes a boy named Jack. Girl and gender-neutral versions are coming later in the specs.
 - The PDF uses the built-in Times font. A rounder storybook font would read better for kids.
 - Nothing is saved on the server, so refreshing the page loses the book.
-- The per-visitor limit (12 images an hour) lives in memory and resets whenever Render restarts the service.
+- I added a front cover (not in the spec): its art comes from the face reference, and the title and name are drawn by the PDF. A back cover would finish the book.
+- The per-visitor limit (15 images an hour) lives in memory and resets whenever Render restarts the service.

@@ -67,8 +67,8 @@ button{font-family:inherit}
 .cast .frame{aspect-ratio:3/2}
 @media(max-width:620px){.cast{grid-template-columns:1fr}}
 .cast p{margin:0; color:var(--soft)}
-.pages{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px}
-@media(max-width:1100px){.pages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pages{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px}
+@media(min-width:1700px){.pages{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:620px){.pages{grid-template-columns:1fr}}
 
 .frame{aspect-ratio:2/3; border:2px solid var(--ink); border-radius:4px; position:relative; overflow:hidden; background:#F4F8FC; container-type:inline-size}
@@ -91,6 +91,8 @@ button{font-family:inherit}
   font:700 5.1cqw/1.27 var(--story); background:rgba(255,253,245,.82); color:var(--ink)}
 .story.bottom{bottom:6.2%} .story.top{top:6.2%}
 .story.dark{background:rgba(20,33,61,.82); color:var(--cream)}
+.story.cover-title{font-size:9.3cqw; line-height:1.1; padding:5cqw 4cqw; background:rgba(255,253,245,.85)}
+.story.cover-title i{display:block; font-size:5.1cqw; font-weight:400; margin-top:2cqw}
 
 .page-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center}
 .small{font:400 .95rem var(--display); padding:6px 12px; color:var(--ink); background:var(--sun);
@@ -112,7 +114,7 @@ button{font-family:inherit}
 <div class="wrap">
   <header>
     <h1>Beanstalk Storybook Studio</h1>
-    <p class="lede">Upload a child's photo and we draw them as Jack on the first three pages of the story, then bind it all into a PDF with an About Me page.</p>
+    <p class="lede">Upload a child's photo and we draw them as Jack on the first three pages of the story, then bind it all into a PDF with a cover and an About Me page.</p>
   </header>
 
   <main class="studio">
@@ -151,25 +153,30 @@ button{font-family:inherit}
       </article>
 
       <div class="pages">
-        {% for p in pages %}
-        <article class="sheet page" id="page-{{p.id}}" data-state="idle">
+        {% for p in [cover] + pages %}
+        {% set label = "Cover" if p.id == "cover" else "Page " ~ loop.index0 %}
+        <article class="sheet page" id="page-{{p.id}}" data-state="idle" data-label="{{ label }}">
           <div class="pegs"><i></i><i></i><i></i></div>
-          <h2>Page {{ loop.index }}: {{ p.title }}</h2>
+          <h2>{{ p.title if p.id == "cover" else label ~ ": " ~ p.title }}</h2>
           <div class="frame">
             <svg class="sketch" viewBox="0 0 200 300" aria-hidden="true">
               <path d="M100 260 C 96 200, 108 150, 98 90 C 92 60, 112 45, 118 27"/>
               <path d="M98 180 C 70 177, 60 150, 56 126 C 78 123, 92 144, 98 180 Z"/>
               <path d="M102 135 C 130 135, 142 108, 144 84 C 122 84, 106 102, 102 135 Z"/>
             </svg>
-            <img alt="Page {{ loop.index }} illustration">
+            <img alt="{{ label }} illustration">
+            {% if p.id == "cover" %}
+            <div class="story top cover-title">Jack and the Beanstalk<i id="cover-name">starring your child</i></div>
+            {% else %}
             <div class="story {{p.text_zone}} {{p.tone}}">{{ p.text }}</div>
+            {% endif %}
             <div class="state" id="state-{{p.id}}">Inking...</div>
           </div>
           <div class="page-actions">
-            <button class="small" type="button" data-redraw="{{p.id}}" disabled>Draw page {{ loop.index }}</button>
+            <button class="small" type="button" data-redraw="{{p.id}}" disabled>Draw {{ label|lower }}</button>
           </div>
           <div class="change">
-            <input type="text" maxlength="200" placeholder="Change one thing, e.g. make the cow brown" aria-label="Change one thing on page {{ loop.index }}" data-change-input="{{p.id}}">
+            <input type="text" maxlength="200" placeholder="Change one thing, e.g. make the cow brown" aria-label="Change one thing on the {{ label|lower }}" data-change-input="{{p.id}}">
             <button class="small ghost" type="button" data-change="{{p.id}}">Apply</button>
           </div>
         </article>
@@ -181,7 +188,9 @@ button{font-family:inherit}
 
 <script>
 const $ = id => document.getElementById(id);
-const PAGES = {{ pages|map(attribute="id")|list|tojson }};
+// Every sheet that gets drawn from the face reference: the cover, then the story pages.
+const PAGES = [...document.querySelectorAll(".pages .page")].map(el => el.id.replace("page-", ""));
+const LABEL = Object.fromEntries(PAGES.map(id => [id, $("page-" + id).dataset.label]));
 const drop = $("drop"), photo = $("photo"), make = $("make"), download = $("download"), status = $("status");
 const book = { ref: null, pages: {} };
 const busy = new Set();
@@ -205,10 +214,10 @@ function setState(id, state, msg) {
 }
 function refresh() {
   make.disabled = busy.size > 0;
-  PAGES.forEach((id, i) => {
+  PAGES.forEach(id => {
     const b = document.querySelector(`[data-redraw="${id}"]`);
     b.disabled = !book.ref || busy.has(id) || busy.has("ref");
-    b.textContent = book.pages[id] ? `Redraw page ${i + 1}` : `Draw page ${i + 1}`;
+    b.textContent = `${book.pages[id] ? "Redraw" : "Draw"} ${LABEL[id].toLowerCase()}`;
     document.querySelector(`[data-change="${id}"]`).disabled = busy.has(id);
   });
   download.disabled = busy.size > 0 || !PAGES.every(id => book.pages[id]);
@@ -268,31 +277,31 @@ make.onclick = async () => {
   try {
     await task("ref", async () => post("/reference", { photo: await shrink(file) }));
   } catch (e) { say(`Meet your cast: ${e.message}`, true); return; }
-  say("Drawing all three pages. This takes about a minute.");
+  say("Drawing the cover and all three pages. This takes about a minute.");
   // One request per page, sent together. Each request makes exactly one API call; no retries.
   const results = await Promise.allSettled(PAGES.map(drawPage));
-  const failed = results.map((r, i) => r.status === "rejected" ? `Page ${i + 1}: ${r.reason.message}` : null).filter(Boolean);
+  const failed = results.map((r, i) => r.status === "rejected" ? `${LABEL[PAGES[i]]}: ${r.reason.message}` : null).filter(Boolean);
   say(failed.length ? failed.join(" ") : "Done. Read it over, then download the PDF.", failed.length > 0);
 };
 
 document.querySelectorAll("[data-redraw]").forEach(b => b.onclick = async () => {
   const id = b.dataset.redraw;
-  say(`Redrawing page ${PAGES.indexOf(id) + 1}.`);
-  try { await drawPage(id); say(`Page ${PAGES.indexOf(id) + 1} is redrawn.`); }
-  catch (e) { say(`Page ${PAGES.indexOf(id) + 1}: ${e.message}`, true); }
+  say(`Redrawing the ${LABEL[id].toLowerCase()}.`);
+  try { await drawPage(id); say(`${LABEL[id]} is redrawn.`); }
+  catch (e) { say(`${LABEL[id]}: ${e.message}`, true); }
 });
 
 document.querySelectorAll("[data-change]").forEach(b => b.onclick = async () => {
   const id = b.dataset.change, input = document.querySelector(`[data-change-input="${id}"]`);
   const change = input.value.trim();
-  if (!book.pages[id]) { say(`Draw page ${PAGES.indexOf(id) + 1} before changing it.`, true); return; }
+  if (!book.pages[id]) { say(`Draw the ${LABEL[id].toLowerCase()} before changing it.`, true); return; }
   if (!change) { say("Describe the one thing to change.", true); input.focus(); return; }
-  say(`Changing page ${PAGES.indexOf(id) + 1}.`);
+  say(`Changing the ${LABEL[id].toLowerCase()}.`);
   try {
     await task(id, async () => post("/page", { page: id, change, current: await blobOf(book.pages[id]) }));
     input.value = "";
-    say(`Page ${PAGES.indexOf(id) + 1} is updated.`);
-  } catch (e) { say(`Page ${PAGES.indexOf(id) + 1}: ${e.message}`, true); }
+    say(`${LABEL[id]} is updated.`);
+  } catch (e) { say(`${LABEL[id]}: ${e.message}`, true); }
 });
 
 download.onclick = async () => {
@@ -312,6 +321,9 @@ download.onclick = async () => {
   } catch (e) { say(e.message, true); }
   refresh();
 };
+const coverName = () => { $("cover-name").textContent = `starring ${$("name").value.trim() || "your child"}`; };
+$("name").addEventListener("input", coverName);
+coverName();
 refresh();
 </script>
 </body>

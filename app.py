@@ -113,7 +113,21 @@ PAGES = [
         "tone": "dark",
     },
 ]
-PAGES_BY_ID = {p["id"]: p for p in PAGES}
+# Front cover (not required by the spec). The title and the child's name are drawn by the PDF layer.
+COVER = {
+    "id": "cover",
+    "title": "Front cover",
+    "cast": ["jack"],
+    "recurring": ["jack", "cottage", "beans"],
+    "scene": "a grassy hill in front of the cottage in golden morning light. Jack stands in the lower middle of "
+             "the picture, holding one of the magic beans up in his open palm and gazing at it. Behind the "
+             "cottage, a giant beanstalk curls up into the clouds.",
+    "mood": "Hopeful and full of wonder. Jack smiles.",
+    "composition": "keep the sky in the top third of the image clear and simple so the book title can sit there.",
+    "text_zone": "top",
+    "tone": "light",
+}
+PAGES_BY_ID = {p["id"]: p for p in [COVER, *PAGES]}
 
 
 def page_prompt(page):
@@ -157,8 +171,8 @@ def edit_prompt(change):
     )
 
 
-# Per-visitor limit on images (a book is 4: the reference plus 3 pages). In memory, so it resets on restart.
-RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "12"))
+# Per-visitor limit on images (a book is 5: the reference, the cover, and 3 pages). In memory, so it resets on restart.
+RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "15"))
 _hits = defaultdict(deque)
 _hits_lock = threading.Lock()
 
@@ -244,7 +258,7 @@ def limited():
 
 @app.get("/")
 def index():
-    return render_template("index.html", pages=PAGES)
+    return render_template("index.html", cover=COVER, pages=PAGES)
 
 
 @app.post("/reference")
@@ -334,10 +348,32 @@ def jack_portrait(reference_img):
     return half.crop((left, 0, left + min(target_w, half.width), half.height))
 
 
-def build_pdf(images, reference_img, name, age, favorites):
+def draw_cover(c, img, name):
+    c.drawImage(ImageReader(io.BytesIO(img)), 0, 0, PAGE_W, PAGE_H)  # full bleed
+    title_lines = simpleSplit("Jack and the Beanstalk", "Times-Bold", 40, PAGE_W - 120)
+    box_h = 26 + len(title_lines) * 44 + 34 + 20
+    y0 = PAGE_H - 40 - box_h
+    c.saveState()
+    c.setFillColorRGB(*CREAM)
+    c.setFillAlpha(0.85)
+    c.roundRect(36, y0, PAGE_W - 72, box_h, 14, stroke=0, fill=1)
+    c.restoreState()
+    c.setFillColorRGB(*INK)
+    y = y0 + box_h - 26 - 32
+    c.setFont("Times-Bold", 40)
+    for line in title_lines:
+        c.drawCentredString(PAGE_W / 2, y, line)
+        y -= 44
+    c.setFont("Times-Italic", 22)
+    c.drawCentredString(PAGE_W / 2, y + 6, f"starring {name}")
+
+
+def build_pdf(cover_img, images, reference_img, name, age, favorites):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(PAGE_W, PAGE_H))
     c.setTitle(f"Jack and the Beanstalk, starring {name}")
+    draw_cover(c, cover_img, name)
+    c.showPage()
     for p, img in zip(PAGES, images):
         c.drawImage(ImageReader(io.BytesIO(img)), 0, 0, PAGE_W, PAGE_H)  # full bleed
         draw_story_text(c, p["text"], p["text_zone"], p["tone"])
@@ -384,13 +420,15 @@ def pdf():
     if age and not age.isdigit():
         return jsonify(error="Age should be a number."), 400
     try:
-        images = [decode_data_url((body.get("pages") or {}).get(p["id"])) for p in PAGES]
+        drawn = body.get("pages") or {}
+        cover_img = decode_data_url(drawn.get("cover"))
+        images = [decode_data_url(drawn.get(p["id"])) for p in PAGES]
         ref = decode_data_url(body["reference"]) if body.get("reference") else None
     except InputError as e:
         return jsonify(error=str(e)), 400
     except ValueError:
         return jsonify(error="A page image could not be read. Redraw it and try again."), 400
-    return send_file(build_pdf(images, ref, name, age, favorites), mimetype="application/pdf",
+    return send_file(build_pdf(cover_img, images, ref, name, age, favorites), mimetype="application/pdf",
                      as_attachment=True, download_name="JackAndTheBeanstalk.pdf")
 
 

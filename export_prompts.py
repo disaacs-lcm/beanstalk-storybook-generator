@@ -39,7 +39,8 @@ out = [
     "|---|---|---|",
 ]
 for key in app.RECURRING:
-    pages = [str(i) for i, p in enumerate(app.PAGES, 1) if key in p["recurring"]]
+    pages = (["cover"] if key in app.COVER["recurring"] else []) + [
+        str(i) for i, p in enumerate(app.PAGES, 1) if key in p["recurring"]]
     how = "Face from the reference image, plus the description" if key in app.CAST else "Description only"
     out.append(f"| {key} | {', '.join(pages)} | {how} |")
 out += [
@@ -58,6 +59,9 @@ out += [
     "## Pages (attach: the face reference from step 0)",
     "",
 ]
+out += ["### Front cover", "",
+        "Attach: the left half of the reference (Jack only). The title and the child's name are drawn by the PDF layer.", "",
+        "```", app.page_prompt(app.COVER), "```", ""]
 for i, p in enumerate(app.PAGES, 1):
     attach = "the whole reference" if "mother" in p["cast"] else "the left half of the reference (Jack only)"
     out += [f"### Page {i}: {p['title']}", "",
