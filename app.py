@@ -48,11 +48,12 @@ RECURRING = {
 
 REFERENCE_PROMPT = (
     'Character reference for a children\'s picture book "Jack and the Beanstalk". '
-    "Turn the child in the attached photo into Jack.\n"
+    "Draw the person in the attached photo as Jack, the hero of the story, at the same age they appear in "
+    "the photo.\n"
     f"Style: {STYLE}\n"
     "Two head-and-shoulders portraits side by side on a plain light-grey background: Jack on the left, "
     "his mother on the right. Both face the viewer with a calm, neutral expression.\n"
-    "Jack: keep the child's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses "
+    "Jack: keep the person's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses "
     "or freckles, rendered in the style above, never photographic.\n"
     f"{RECURRING['mother']}\n"
     "No text, letters, or labels anywhere in the image."
@@ -225,6 +226,9 @@ def generate_image(prompt, image, kind, size=PAGE_SIZE):
             msg = resp.json().get("error", {}).get("message") or "Image API error"
         except ValueError:
             msg = "Image API error"
+        if "safety system" in msg:
+            msg = ("OpenAI's safety filter refused this image. Try a different photo: one person, a clear, "
+                   f"well-lit face, nothing else in frame. ({msg})")
         raise RuntimeError(msg)
     return "data:image/png;base64," + resp.json()["data"][0]["b64_json"]
 

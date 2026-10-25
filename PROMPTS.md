@@ -42,10 +42,10 @@ Made once per book: Jack's face on the left, his mother's on the right, both neu
 them attach the whole image; pages with only Jack attach its left half.
 
 ```
-Character reference for a children's picture book "Jack and the Beanstalk". Turn the child in the attached photo into Jack.
+Character reference for a children's picture book "Jack and the Beanstalk". Draw the person in the attached photo as Jack, the hero of the story, at the same age they appear in the photo.
 Style: Modern 3D animated feature — rounded forms, large expressive eyes, soft rim light.
 Two head-and-shoulders portraits side by side on a plain light-grey background: Jack on the left, his mother on the right. Both face the viewer with a calm, neutral expression.
-Jack: keep the child's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses or freckles, rendered in the style above, never photographic.
+Jack: keep the person's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses or freckles, rendered in the style above, never photographic.
 Jack's mother is a slim woman in her late thirties with the same skin tone and hair color as Jack. Her hair is tied back in a loose bun under a faded blue headscarf, and she wears a patched grey-blue dress and a cream apron.
 No text, letters, or labels anywhere in the image.
 ```
@@ -123,4 +123,5 @@ Not built yet. It will be one more entry in `PAGES` in `app.py`.
 | 2 | Page 3 (draft 2) | The cottage came out two stories tall | Added one fixed cottage description (small, one-story, thatched, "no upper floor") reused on pages 1 and 3; the mother now leans out of a ground-floor window |
 | 3 | Pages 1 and 3 (draft 2) | The mother looks like a different woman on each page | Put her in the reference: one image with Jack on the left and his mother on the right, plus a fixed description of her, reused on every page |
 | 4 | All pages (draft 3) | A full-body two-person reference shrinks the faces and covers more than needed | Reference is now neutral face portraits only, attached only for the faces a page needs; the cow, cottage, beans and clothes use fixed descriptions on every page they appear |
+| 5 | Face reference (live site) | OpenAI's safety system rejected the request | Reworded step 0: "the person in the attached photo ... at the same age they appear" instead of "turn the child into Jack"; errors now name the step that failed |
 |     |        |                |                |

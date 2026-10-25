@@ -267,18 +267,19 @@ make.onclick = async () => {
   say("Drawing the character first. This takes about a minute.");
   try {
     await task("ref", async () => post("/reference", { photo: await shrink(file) }));
-  } catch (e) { say(e.message, true); return; }
+  } catch (e) { say(`Meet your cast: ${e.message}`, true); return; }
   say("Drawing all three pages. This takes about a minute.");
   // One request per page, sent together. Each request makes exactly one API call; no retries.
   const results = await Promise.allSettled(PAGES.map(drawPage));
-  const failed = results.filter(r => r.status === "rejected");
-  say(failed.length ? failed.map(f => f.reason.message).join(" ") : "Done. Read it over, then download the PDF.", failed.length > 0);
+  const failed = results.map((r, i) => r.status === "rejected" ? `Page ${i + 1}: ${r.reason.message}` : null).filter(Boolean);
+  say(failed.length ? failed.join(" ") : "Done. Read it over, then download the PDF.", failed.length > 0);
 };
 
 document.querySelectorAll("[data-redraw]").forEach(b => b.onclick = async () => {
   const id = b.dataset.redraw;
   say(`Redrawing page ${PAGES.indexOf(id) + 1}.`);
-  try { await drawPage(id); say(`Page ${PAGES.indexOf(id) + 1} is redrawn.`); } catch (e) { say(e.message, true); }
+  try { await drawPage(id); say(`Page ${PAGES.indexOf(id) + 1} is redrawn.`); }
+  catch (e) { say(`Page ${PAGES.indexOf(id) + 1}: ${e.message}`, true); }
 });
 
 document.querySelectorAll("[data-change]").forEach(b => b.onclick = async () => {
@@ -291,7 +292,7 @@ document.querySelectorAll("[data-change]").forEach(b => b.onclick = async () => 
     await task(id, async () => post("/page", { page: id, change, current: await blobOf(book.pages[id]) }));
     input.value = "";
     say(`Page ${PAGES.indexOf(id) + 1} is updated.`);
-  } catch (e) { say(e.message, true); }
+  } catch (e) { say(`Page ${PAGES.indexOf(id) + 1}: ${e.message}`, true); }
 });
 
 download.onclick = async () => {
