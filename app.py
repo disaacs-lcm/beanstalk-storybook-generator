@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_file
+from PIL import Image
 from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 
@@ -18,20 +19,30 @@ app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024  # room for 4 page images wh
 
 IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-2.5-flare")
 IMAGE_QUALITY = os.environ.get("IMAGE_QUALITY", "low")
-IMAGE_SIZE = "1024x1536"  # portrait: one book page
+PAGE_SIZE = "1024x1536"       # portrait: one book page
+REFERENCE_SIZE = "1536x1024"  # landscape: Jack and his mother side by side
 API_URL = "https://api.openai.com/v1/images/edits"
 
 # The style for the whole book. Worded identically in every call; never changed mid-book.
 STYLE = "Modern 3D animated feature — rounded forms, large expressive eyes, soft rim light."
 
+# Fixed descriptions reused word for word, so the cast and the cottage look the same on every page.
+JACK_OUTFIT = "patched brown wool tunic, rope belt, green trousers, worn leather boots"
+MOTHER = ("Jack's mother: a slim woman in her late thirties with the same skin tone and hair color as Jack, "
+          "her hair tied back in a loose bun under a faded blue headscarf, wearing a patched grey-blue dress "
+          "and a cream apron")
+COTTAGE = ("a small one-story stone cottage with a thatched roof, a wooden front door, and one small window "
+           "beside the door (one story only, no upper floor)")
+
 REFERENCE_PROMPT = (
-    'Character reference sheet for a children\'s picture book. Turn the child in the attached photo into Jack, '
-    'the hero of "Jack and the Beanstalk".\n'
+    'Character reference sheet for a children\'s picture book "Jack and the Beanstalk". '
+    "Turn the child in the attached photo into Jack.\n"
     f"Style: {STYLE}\n"
-    "Full body, standing, facing the viewer, arms relaxed, on a plain light-grey background.\n"
-    "Keep the child's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses or "
-    "freckles, rendered in the style above, never photographic.\n"
-    "Outfit: patched brown wool tunic, rope belt, green trousers, worn leather boots.\n"
+    "Two full-body characters side by side, standing, facing the viewer, arms relaxed, on a plain light-grey "
+    "background: Jack on the left, his mother on the right.\n"
+    "Jack: keep the child's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses "
+    f"or freckles, rendered in the style above, never photographic. Outfit: {JACK_OUTFIT}.\n"
+    f"{MOTHER}.\n"
     "No text, letters, or labels anywhere in the image."
 )
 
@@ -43,8 +54,8 @@ PAGES = [
         "id": "cupboard",
         "title": "The empty cupboard",
         "text": "Jack and his mother had nothing left to sell but Milky-White.",
-        "scene": "Jack and his mother stand in a bare cottage kitchen beside an empty, open cupboard. "
-                 "Through the open door, Milky-White the cow is visible outside.\n"
+        "scene": f"inside {COTTAGE}. Jack and his mother stand in its bare kitchen beside an empty, open "
+                 "cupboard. Through the open front door, Milky-White the cow is visible outside.\n"
                  "Jack's full face is front-lit, and he is looking at his mother.",
         "composition": "keep the lower third of the image quiet and uncluttered (plain floorboards) "
                        "so text can sit there.",
@@ -68,8 +79,9 @@ PAGES = [
         "id": "window",
         "title": "Out the window",
         "text": "“Beans!” she cried. And out the window they went.",
-        "scene": "the cottage at dusk. Jack's mother throws the beans out of a window, and they scatter into "
-                 "the garden below. Jack stands in the doorway, watching.\n"
+        "scene": f"outside {COTTAGE}, at dusk. Jack's mother leans out of the small ground-floor window and "
+                 "throws the beans, which scatter into the garden in front of the cottage. Jack stands in the "
+                 "open front doorway, watching.\n"
                  "Use a darker dusk palette than the daytime pages: deep blues and purples, "
                  "with warm light from the window.",
         "composition": "keep the dark grass in the lower third calm and uncluttered so text can sit there.",
@@ -85,7 +97,8 @@ def page_prompt(page):
     return (
         "Children's picture-book page illustration.\n"
         f"Style: {STYLE}\n"
-        "The boy in the attached reference image is Jack. Keep his face, hair, and outfit exactly as in the reference.\n"
+        "The attached reference shows Jack (left) and his mother (right). Whenever they appear, keep their faces, "
+        "hair, and clothes exactly as in the reference.\n"
         f"Scene: {page['scene']}\n"
         f"Mood: {page['mood']}\n"
         f"Composition: {page['composition']}\n"
@@ -155,7 +168,7 @@ def read_image(field):
     return data, kind
 
 
-def generate_image(prompt, image, kind):
+def generate_image(prompt, image, kind, size=PAGE_SIZE):
     """Exactly one image API call per request; no retries or loops."""
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
@@ -164,7 +177,7 @@ def generate_image(prompt, image, kind):
     resp = requests.post(
         API_URL,
         headers={"Authorization": f"Bearer {key}"},
-        data={"model": IMAGE_MODEL, "prompt": prompt, "size": IMAGE_SIZE, "quality": IMAGE_QUALITY, "n": "1"},
+        data={"model": IMAGE_MODEL, "prompt": prompt, "size": size, "quality": IMAGE_QUALITY, "n": "1"},
         files={"image": (f"image.{ext}", image, mimetype)},
         timeout=170,
     )
@@ -193,7 +206,7 @@ def index():
 
 @app.post("/reference")
 def reference():
-    """Step 0: turn the uploaded photo into one character reference that every page reuses."""
+    """Step 0: turn the uploaded photo into one cast reference (Jack and his mother) that every page reuses."""
     try:
         data, kind = read_image("photo")
     except InputError as e:
@@ -201,7 +214,7 @@ def reference():
     if (resp := limited()):
         return resp
     try:
-        return jsonify(image=generate_image(REFERENCE_PROMPT, data, kind))
+        return jsonify(image=generate_image(REFERENCE_PROMPT, data, kind, size=REFERENCE_SIZE))
     except RuntimeError as e:
         return jsonify(error=str(e)), 502
 
@@ -267,6 +280,16 @@ def draw_story_text(c, text, zone, tone):
         y -= lead
 
 
+def jack_portrait(reference_img):
+    """Jack stands on the left half of the cast reference; crop him out for the About Me page."""
+    im = Image.open(io.BytesIO(reference_img)).convert("RGB")
+    w, h = im.size
+    half = im.crop((0, 0, w // 2, h))
+    target_w = half.height * 2 // 3  # 2:3 portrait, centered on Jack
+    left = max(0, (half.width - target_w) // 2)
+    return half.crop((left, 0, left + min(target_w, half.width), half.height))
+
+
 def build_pdf(images, reference_img, name, age, favorites):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(PAGE_W, PAGE_H))
@@ -283,7 +306,7 @@ def build_pdf(images, reference_img, name, age, favorites):
     c.setFont("Times-Bold", 34)
     c.drawCentredString(PAGE_W / 2, PAGE_H - 70, "About Me")
     if reference_img:
-        c.drawImage(ImageReader(io.BytesIO(reference_img)), PAGE_W / 2 - 100, PAGE_H - 400, 200, 300)
+        c.drawImage(ImageReader(jack_portrait(reference_img)), PAGE_W / 2 - 100, PAGE_H - 400, 200, 300)
     y = PAGE_H - 445
     c.setFont("Times-Bold", 26)
     c.drawCentredString(PAGE_W / 2, y, name)

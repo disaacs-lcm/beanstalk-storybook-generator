@@ -9,4 +9,5 @@ dependencies = [
     "gunicorn>=22.0",
     "python-dotenv>=1.0",
     "reportlab>=4.2",
+    "pillow>=10.0",
 ]

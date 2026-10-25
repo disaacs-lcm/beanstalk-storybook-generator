@@ -4,7 +4,8 @@ What in this build still needs work.
 
 - The prompts have not been tested in the OpenAI Playground yet. Everything in `PROMPTS.md` is a first draft.
 - Jack's face across pages is only as consistent as the character reference. I haven't checked yet whether his face drifts between pages 1 and 3.
-- The mother appears on pages 1 and 3 but has no reference image, so she will probably look like a different woman on each page. She needs her own reference, or a combined Jack-and-mother reference.
+- The mother is now in the cast reference next to Jack, with a fixed description, but I haven't checked yet that she actually stays the same between pages 1 and 3.
+- The cottage has one fixed description (small, one-story, thatched) shared by pages 1 and 3. The first draft drew it two stories tall on page 3, so this needs checking in the Playground.
 - The old man and Milky-White also have no references. Milky-White is seen on pages 1 and 2 and could change color or size between them.
 - The prompts ask the model to leave a calm area for the story text, but nothing checks that it did. The text panel can end up covering a face.
 - Page 4 (the beanstalk at dawn) isn't built. The planting and climbing scenes from the first app still need to be moved into the book as pages.
