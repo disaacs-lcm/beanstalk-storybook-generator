@@ -23,7 +23,7 @@ out = [
     "## Settings to use in the Playground",
     "",
     f"- Model: `{app.IMAGE_MODEL}`. Also try `gpt-image-2.5-sunburst` on the page prompts, since it is the editing-focused one.",
-    f"- Size: {app.REFERENCE_SIZE.replace('x', ' x ')} for the cast reference, {app.PAGE_SIZE.replace('x', ' x ')} for pages",
+    f"- Size: {app.REFERENCE_SIZE.replace('x', ' x ')} for the face reference, {app.PAGE_SIZE.replace('x', ' x ')} for pages",
     f"- Quality: {app.IMAGE_QUALITY} while experimenting; try medium once a prompt works",
     "- Mode: edit (attach an image) for every prompt below",
     "",
@@ -33,19 +33,35 @@ out = [
     "",
     "```", app.STYLE, "```",
     "",
-    "## Step 0: cast reference (attach: the uploaded photo)",
+    "## What recurs, and how it stays consistent",
     "",
-    "Made once per book: Jack on the left, his mother on the right. Every page attaches this one image,",
-    "so both of them look the same on every page.",
+    "| Element | Pages | How |",
+    "|---|---|---|",
+]
+for key in app.RECURRING:
+    pages = [str(i) for i, p in enumerate(app.PAGES, 1) if key in p["recurring"]]
+    how = "Face from the reference image, plus the description" if key in app.CAST else "Description only"
+    out.append(f"| {key} | {', '.join(pages)} | {how} |")
+out += [
+    "",
+    "Descriptions, used word for word on every page where the element appears:",
+    "",
+    *[f"- **{k}**: {v}" for k, v in app.RECURRING.items()],
+    "",
+    "## Step 0: face reference (attach: the uploaded photo)",
+    "",
+    "Made once per book: Jack's face on the left, his mother's on the right, both neutral. Pages with both of",
+    "them attach the whole image; pages with only Jack attach its left half.",
     "",
     "```", app.REFERENCE_PROMPT, "```",
     "",
-    "## Pages (attach: the cast reference from step 0)",
+    "## Pages (attach: the face reference from step 0)",
     "",
 ]
 for i, p in enumerate(app.PAGES, 1):
+    attach = "the whole reference" if "mother" in p["cast"] else "the left half of the reference (Jack only)"
     out += [f"### Page {i}: {p['title']}", "",
-            f"Story text (drawn by the PDF layer, not the model): {p['text']}", "",
+            f"Attach: {attach}. Story text (drawn by the PDF layer, not the model): {p['text']}", "",
             "```", app.page_prompt(p), "```", ""]
 out += ["### Page 4 (later): the beanstalk at dawn", "",
         "Not built yet. It will be one more entry in `PAGES` in `app.py`.", "", notes]

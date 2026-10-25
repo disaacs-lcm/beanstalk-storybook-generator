@@ -20,72 +20,94 @@ app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024  # room for 4 page images wh
 IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-2.5-flare")
 IMAGE_QUALITY = os.environ.get("IMAGE_QUALITY", "low")
 PAGE_SIZE = "1024x1536"       # portrait: one book page
-REFERENCE_SIZE = "1536x1024"  # landscape: Jack and his mother side by side
+REFERENCE_SIZE = "1536x1024"  # landscape: Jack's and his mother's faces side by side
 API_URL = "https://api.openai.com/v1/images/edits"
 
 # The style for the whole book. Worded identically in every call; never changed mid-book.
 STYLE = "Modern 3D animated feature — rounded forms, large expressive eyes, soft rim light."
 
-# Fixed descriptions reused word for word, so the cast and the cottage look the same on every page.
-JACK_OUTFIT = "patched brown wool tunic, rope belt, green trousers, worn leather boots"
-MOTHER = ("Jack's mother: a slim woman in her late thirties with the same skin tone and hair color as Jack, "
-          "her hair tied back in a loose bun under a faded blue headscarf, wearing a patched grey-blue dress "
-          "and a cream apron")
-COTTAGE = ("a small one-story stone cottage with a thatched roof, a wooden front door, and one small window "
-           "beside the door (one story only, no upper floor)")
+# Anything that appears on more than one page is kept consistent one of two ways:
+# - Faces are too detailed to describe reliably, so Jack and his mother get a reference image (CAST below).
+# - Everything simpler gets one fixed description, reused word for word on every page it appears on.
+CAST = {
+    "jack": "Jack (left in the reference)",
+    "mother": "Jack's mother (right in the reference)",
+}
+RECURRING = {
+    "jack": "Jack wears a patched brown wool tunic, a rope belt, green trousers, and worn leather boots.",
+    "mother": "Jack's mother is a slim woman in her late thirties with the same skin tone and hair color as Jack. "
+              "Her hair is tied back in a loose bun under a faded blue headscarf, and she wears a patched "
+              "grey-blue dress and a cream apron.",
+    "cow": "Milky-White is a gentle, thin white dairy cow with a few soft brown patches, a pink nose, "
+           "short curved horns, and a frayed rope halter.",
+    "cottage": "The cottage is a small one-story stone cottage with a thatched roof, a wooden front door, "
+               "and one small window beside the door (one story only, no upper floor).",
+    "beans": "The magic beans are five smooth beans, each a different bright color (red, orange, green, blue, "
+             "and purple), each about the size of a fingernail, with a faint sparkle.",
+}
 
 REFERENCE_PROMPT = (
-    'Character reference sheet for a children\'s picture book "Jack and the Beanstalk". '
+    'Character reference for a children\'s picture book "Jack and the Beanstalk". '
     "Turn the child in the attached photo into Jack.\n"
     f"Style: {STYLE}\n"
-    "Two full-body characters side by side, standing, facing the viewer, arms relaxed, on a plain light-grey "
-    "background: Jack on the left, his mother on the right.\n"
+    "Two head-and-shoulders portraits side by side on a plain light-grey background: Jack on the left, "
+    "his mother on the right. Both face the viewer with a calm, neutral expression.\n"
     "Jack: keep the child's face shape, eye shape and color, skin tone, hair color and hairstyle, and any glasses "
-    f"or freckles, rendered in the style above, never photographic. Outfit: {JACK_OUTFIT}.\n"
-    f"{MOTHER}.\n"
+    "or freckles, rendered in the style above, never photographic.\n"
+    f"{RECURRING['mother']}\n"
     "No text, letters, or labels anywhere in the image."
 )
 
 # The storyboard. `text` is drawn onto the page by the PDF layer; the image model never sees it.
-# text_zone says where the art leaves room for it; tone picks dark-on-light or light-on-dark lettering.
+# `cast` says whose faces the page needs from the reference; `recurring` lists the fixed descriptions it uses.
+# text_zone says where the art leaves room for the text; tone picks dark-on-light or light-on-dark lettering.
 # Page 4 (the beanstalk at dawn) and the earlier planting/climbing scenes slot in as more entries here.
 PAGES = [
     {
         "id": "cupboard",
         "title": "The empty cupboard",
         "text": "Jack and his mother had nothing left to sell but Milky-White.",
-        "scene": f"inside {COTTAGE}. Jack and his mother stand in its bare kitchen beside an empty, open "
-                 "cupboard. Through the open front door, Milky-White the cow is visible outside.\n"
+        "cast": ["jack", "mother"],
+        "recurring": ["jack", "mother", "cottage", "cow"],
+        "scene": "inside the cottage. Jack and his mother stand in its bare kitchen beside an empty, open "
+                 "cupboard. Through the open front door, Milky-White is visible outside.\n"
                  "Jack's full face is front-lit, and he is looking at his mother.",
+        "mood": "Worried and sad. Jack's mother looks tired and anxious, her shoulders slumped. Jack looks up at "
+                "her with a worried face. No smiles, but gentle rather than frightening, since this is a "
+                "children's book.",
         "composition": "keep the lower third of the image quiet and uncluttered (plain floorboards) "
                        "so text can sit there.",
-        "mood": "Worried and sad. Jack's mother looks tired and anxious, her shoulders slumped. Jack looks up at her with a worried face. No smiles, but gentle rather than frightening, since this is a children's book.",
         "text_zone": "bottom",
         "tone": "light",
     },
     {
         "id": "trade",
         "title": "The trade",
-        "text": "“Five magic beans,” said the old man. “For one cow.”",
-        "scene": "a dirt road leading to market. An old man holds out five coloured beans in his open palm. "
-                 "Jack holds Milky-White the cow by a rope.\n"
-                 "Jack is in three-quarter view, wearing the same clothes as in the reference.",
+        "text": "\u201cFive magic beans,\u201d said the old man. \u201cFor one cow.\u201d",
+        "cast": ["jack"],
+        "recurring": ["jack", "cow", "beans"],
+        "scene": "a dirt road leading to market. An old man holds out the five magic beans in his open palm. "
+                 "Jack holds Milky-White by her rope halter.\n"
+                 "Jack is in three-quarter view.",
+        "mood": "Jack is curious and tempted, eyes wide at the beans. The old man smiles slyly, as if he knows "
+                "a secret.",
         "composition": "keep the sky in the top third of the image clear and simple so text can sit there.",
-        "mood": "Jack is curious and tempted, eyes wide at the beans. The old man smiles slyly, as if he knows a secret.",
         "text_zone": "top",
         "tone": "light",
     },
     {
         "id": "window",
         "title": "Out the window",
-        "text": "“Beans!” she cried. And out the window they went.",
-        "scene": f"outside {COTTAGE}, at dusk. Jack's mother leans out of the small ground-floor window and "
-                 "throws the beans, which scatter into the garden in front of the cottage. Jack stands in the "
-                 "open front doorway, watching.\n"
+        "text": "\u201cBeans!\u201d she cried. And out the window they went.",
+        "cast": ["jack", "mother"],
+        "recurring": ["jack", "mother", "cottage", "beans"],
+        "scene": "outside the cottage, at dusk. Jack's mother leans out of the small ground-floor window and "
+                 "throws the magic beans, which scatter into the garden in front of the cottage. Jack stands in "
+                 "the open front doorway, watching.\n"
                  "Use a darker dusk palette than the daytime pages: deep blues and purples, "
                  "with warm light from the window.",
-        "composition": "keep the dark grass in the lower third calm and uncluttered so text can sit there.",
         "mood": "Jack's mother is angry and frustrated. Jack looks shocked and dismayed, his mouth open. No smiles.",
+        "composition": "keep the dark grass in the lower third calm and uncluttered so text can sit there.",
         "text_zone": "bottom",
         "tone": "dark",
     },
@@ -94,16 +116,33 @@ PAGES_BY_ID = {p["id"]: p for p in PAGES}
 
 
 def page_prompt(page):
+    faces = " and ".join(CAST[c] for c in page["cast"])
+    reference = (f"The attached reference shows the faces of {faces}. Keep their faces and hair exactly as in the "
+                 "reference; their expressions follow the Mood line below.")
+    if page["cast"] == ["jack"]:
+        reference = ("The attached reference shows Jack's face. Keep his face and hair exactly as in the "
+                     "reference; his expression follows the Mood line below.")
+    recurring = "\n".join(f"- {RECURRING[r]}" for r in page["recurring"])
     return (
         "Children's picture-book page illustration.\n"
         f"Style: {STYLE}\n"
-        "The attached reference shows Jack (left) and his mother (right). Whenever they appear, keep their faces, "
-        "hair, and clothes exactly as in the reference.\n"
+        f"{reference}\n"
+        f"These appear elsewhere in the book too, so draw them exactly as described:\n{recurring}\n"
         f"Scene: {page['scene']}\n"
         f"Mood: {page['mood']}\n"
         f"Composition: {page['composition']}\n"
         "Do not draw any text, letters, or signs."
     )
+
+
+def reference_for(page, reference_img):
+    """Attach only the faces this page needs: Jack is the left half of the reference, his mother the right."""
+    if "mother" in page["cast"]:
+        return reference_img
+    im = Image.open(io.BytesIO(reference_img)).convert("RGB")
+    out = io.BytesIO()
+    im.crop((0, 0, im.width // 2, im.height)).save(out, "PNG")
+    return out.getvalue()
 
 
 def edit_prompt(change):
@@ -206,7 +245,7 @@ def index():
 
 @app.post("/reference")
 def reference():
-    """Step 0: turn the uploaded photo into one cast reference (Jack and his mother) that every page reuses."""
+    """Step 0: turn the uploaded photo into one face reference (Jack and his mother) that every page reuses."""
     try:
         data, kind = read_image("photo")
     except InputError as e:
@@ -234,6 +273,7 @@ def page():
             prompt = edit_prompt(change)
         else:
             data, kind = read_image("reference")
+            data, kind = reference_for(p, data), (kind if "mother" in p["cast"] else ("image/png", "png"))
             prompt = page_prompt(p)
     except InputError as e:
         return jsonify(error=str(e)), 400
@@ -281,7 +321,7 @@ def draw_story_text(c, text, zone, tone):
 
 
 def jack_portrait(reference_img):
-    """Jack stands on the left half of the cast reference; crop him out for the About Me page."""
+    """Jack is the left half of the face reference; crop him out for the About Me page."""
     im = Image.open(io.BytesIO(reference_img)).convert("RGB")
     w, h = im.size
     half = im.crop((0, 0, w // 2, h))
