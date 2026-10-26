@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_file
 from PIL import Image
 from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 load_dotenv()  # reads .env locally; on Render the key comes from its environment settings
@@ -306,8 +308,22 @@ def page():
 # ---------- PDF ----------
 
 PAGE_W, PAGE_H = 432, 648  # 6 x 9 inches, same 2:3 shape as the art
-INK = (0.08, 0.13, 0.24)
-CREAM = (1, 0.99, 0.96)
+
+
+def hex_rgb(h):
+    return tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+
+
+INK = hex_rgb("#2A2438")
+PAPER = hex_rgb("#FFFBF1")
+DUSK = hex_rgb("#34396B")
+SOFT = hex_rgb("#5A5266")
+
+# Andika was designed for early readers. Static TTFs, because variable fonts are unreliable in PDF libraries.
+FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+for _name, _file in (("Andika", "Andika-Regular.ttf"), ("Andika-Bold", "Andika-Bold.ttf"),
+                     ("Andika-Italic", "Andika-Italic.ttf")):
+    pdfmetrics.registerFont(TTFont(_name, os.path.join(FONT_DIR, _file)))
 
 
 def decode_data_url(url):
@@ -320,18 +336,18 @@ def decode_data_url(url):
 
 
 def draw_story_text(c, text, zone, tone):
-    size, lead, pad = 22, 28, 16
-    lines = simpleSplit(text, "Times-Bold", size, PAGE_W - 2 * 36 - 2 * pad)
+    size, lead, pad = 21, 28, 16
+    lines = simpleSplit(text, "Andika", size, PAGE_W - 2 * 36 - 2 * pad)
     box_h = len(lines) * lead + 2 * pad
     y0 = 40 if zone == "bottom" else PAGE_H - 40 - box_h
-    fg, bg = (INK, CREAM) if tone == "light" else (CREAM, INK)
+    fg, bg = (INK, PAPER) if tone == "light" else (PAPER, DUSK)
     c.saveState()
     c.setFillColorRGB(*bg)
-    c.setFillAlpha(0.82)
-    c.roundRect(36, y0, PAGE_W - 72, box_h, 14, stroke=0, fill=1)
+    c.setFillAlpha(0.88)
+    c.roundRect(36, y0, PAGE_W - 72, box_h, 16, stroke=0, fill=1)
     c.restoreState()
     c.setFillColorRGB(*fg)
-    c.setFont("Times-Bold", size)
+    c.setFont("Andika", size)
     y = y0 + box_h - pad - size + 4
     for line in lines:
         c.drawCentredString(PAGE_W / 2, y, line)
@@ -349,23 +365,24 @@ def jack_portrait(reference_img):
 
 
 def draw_cover(c, img, name):
-    c.drawImage(ImageReader(io.BytesIO(img)), 0, 0, PAGE_W, PAGE_H)  # full bleed
-    title_lines = simpleSplit("Jack and the Beanstalk", "Times-Bold", 40, PAGE_W - 120)
-    box_h = 26 + len(title_lines) * 44 + 34 + 20
+    """Full-bleed art with a dusk title band across the top, matching the web preview."""
+    c.drawImage(ImageReader(io.BytesIO(img)), 0, 0, PAGE_W, PAGE_H)
+    title_lines = simpleSplit("Jack and the Beanstalk", "Andika-Bold", 38, PAGE_W - 80)
+    box_h = 24 + len(title_lines) * 42 + 30 + 18
     y0 = PAGE_H - 40 - box_h
     c.saveState()
-    c.setFillColorRGB(*CREAM)
-    c.setFillAlpha(0.85)
-    c.roundRect(36, y0, PAGE_W - 72, box_h, 14, stroke=0, fill=1)
+    c.setFillColorRGB(*DUSK)
+    c.setFillAlpha(0.92)
+    c.rect(0, y0, PAGE_W, box_h, stroke=0, fill=1)
     c.restoreState()
-    c.setFillColorRGB(*INK)
-    y = y0 + box_h - 26 - 32
-    c.setFont("Times-Bold", 40)
+    c.setFillColorRGB(*PAPER)
+    y = y0 + box_h - 24 - 30
+    c.setFont("Andika-Bold", 38)
     for line in title_lines:
         c.drawCentredString(PAGE_W / 2, y, line)
-        y -= 44
-    c.setFont("Times-Italic", 22)
-    c.drawCentredString(PAGE_W / 2, y + 6, f"starring {name}")
+        y -= 42
+    c.setFont("Andika-Italic", 21)
+    c.drawCentredString(PAGE_W / 2, y + 8, f"starring {name}")
 
 
 def build_pdf(cover_img, images, reference_img, name, age, favorites):
@@ -380,29 +397,31 @@ def build_pdf(cover_img, images, reference_img, name, age, favorites):
         c.showPage()
 
     # Last page: About Me
-    c.setFillColorRGB(*CREAM)
+    c.setFillColorRGB(*PAPER)
     c.rect(0, 0, PAGE_W, PAGE_H, stroke=0, fill=1)
     c.setFillColorRGB(*INK)
-    c.setFont("Times-Bold", 34)
-    c.drawCentredString(PAGE_W / 2, PAGE_H - 70, "About Me")
+    c.setFont("Andika-Bold", 34)
+    c.drawCentredString(PAGE_W / 2, PAGE_H - 72, "About Me")
     if reference_img:
         c.drawImage(ImageReader(jack_portrait(reference_img)), PAGE_W / 2 - 100, PAGE_H - 400, 200, 300)
     y = PAGE_H - 445
-    c.setFont("Times-Bold", 26)
+    c.setFont("Andika-Bold", 26)
     c.drawCentredString(PAGE_W / 2, y, name)
     y -= 34
-    c.setFont("Times-Roman", 17)
+    c.setFont("Andika", 17)
     if age:
         c.drawCentredString(PAGE_W / 2, y, f"Age {age}")
         y -= 30
     if favorites:
-        c.setFont("Times-Italic", 15)
+        c.setFillColorRGB(*SOFT)
+        c.setFont("Andika-Italic", 15)
         c.drawCentredString(PAGE_W / 2, y, "My favorite things")
         y -= 22
-        c.setFont("Times-Roman", 15)
-        for line in simpleSplit(favorites, "Times-Roman", 15, PAGE_W - 96)[:6]:
+        c.setFillColorRGB(*INK)
+        c.setFont("Andika", 15)
+        for line in simpleSplit(favorites, "Andika", 15, PAGE_W - 96)[:6]:
             c.drawCentredString(PAGE_W / 2, y, line)
-            y -= 20
+            y -= 21
     c.showPage()
     c.save()
     buf.seek(0)

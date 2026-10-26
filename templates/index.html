@@ -3,167 +3,256 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Beanstalk Storybook Studio</title>
+<title>Beanstalk Storybook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,600..900,0..100,0..1;1,9..144,600..900,0..100,0..1&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --box:#E8EFF5; --grid:#BCD6EC; --ink:#14213D; --paper:#FFFFFF; --pencil:#5B8DB8; --cream:#FFFDF5;
-  --bean:#2F9E55; --sun:#FFC933; --soft:#4A5878; --bad:#B3261E;
-  --display:"Bagel Fat One",system-ui,sans-serif; --body:"Schibsted Grotesk",system-ui,sans-serif;
-  --story:Georgia,"Times New Roman",serif;
+  --desk:#F3E9D2; --shade:#E8DABA; --paper:#FFFBF1; --ink:#2A2438; --soft:#5A5266;
+  --green:#2F7D4A; --gold:#F2B544; --dusk:#34396B; --pencil:#8A7F9A; --bad:#B3261E;
+  --shadow:0 10px 30px rgba(42,36,56,.18);
+  --display:"Fraunces",Georgia,serif; --body:"Nunito",system-ui,sans-serif; --story:"Andika",system-ui,sans-serif;
+  --pw:clamp(220px, calc((100vh - 300px) * .6667), 440px);  /* one book page: 2:3, sized to fit the screen */
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0; color:var(--ink); font:400 1rem/1.5 var(--body); background-color:var(--box);
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:32px 32px; background-position:-1px -1px}
-.wrap{max-width:1180px; margin:0 auto; padding:24px 16px 64px}
-header{padding:8px 0 28px}
-h1{font:400 clamp(2.1rem,5.5vw,3.6rem)/1 var(--display); margin:0 0 10px; text-shadow:3px 3px 0 var(--sun)}
-.lede{max-width:52ch; margin:0; color:var(--soft); font-size:1.05rem}
+body{margin:0; min-height:100vh; color:var(--ink); font:400 1rem/1.5 var(--body);
+  background:radial-gradient(ellipse at 50% 30%, var(--desk) 0%, var(--desk) 55%, var(--shade) 100%) fixed; background-color:var(--desk)}
+.display{font-family:var(--display); font-weight:800; font-variation-settings:"SOFT" 100, "WONK" 1}
+button{font-family:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
 
-.studio{display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:28px; align-items:start}
-@media(max-width:900px){.studio{grid-template-columns:1fr}}
+.app{display:grid; grid-template-columns:320px minmax(0,1fr); gap:28px; max-width:1500px; margin:0 auto; padding:24px 20px 32px}
 
-.sheet{background:var(--paper); border:2.5px solid var(--ink); border-radius:8px; box-shadow:5px 5px 0 var(--ink); position:relative; padding:34px 16px 16px}
-.pegs{position:absolute; top:9px; left:0; right:0; display:flex; justify-content:center; gap:22px}
-.pegs i{width:20px; height:9px; border-radius:6px; background:var(--box); border:2px solid var(--ink)}
-.sheet h2{font:400 1.3rem/1.15 var(--display); margin:0 0 12px}
-
-.desk{position:sticky; top:16px}
-@media(max-width:900px){.desk{position:static}}
-.drop{display:grid; place-items:center; text-align:center; min-height:170px; margin-bottom:16px; padding:12px;
-  border:2.5px dashed var(--pencil); border-radius:6px; background:repeating-linear-gradient(45deg,#fff,#fff 9px,#F4F8FC 9px,#F4F8FC 18px);
-  cursor:pointer; overflow:hidden; position:relative}
-.drop:hover,.drop.over,.drop:focus-within{border-color:var(--bean); background:#F2FBF5}
+/* ---------- rail: the desk ---------- */
+.rail{display:flex; flex-direction:column; gap:18px; align-self:start; position:sticky; top:20px}
+.brand h1{margin:0; font-size:2.3rem; line-height:1.02; letter-spacing:-.01em}
+.brand p{margin:6px 0 0; color:var(--soft)}
+.card{background:var(--paper); border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); padding:16px}
+.desk summary{list-style:none; cursor:default; font-size:1.25rem; margin-bottom:12px}
+.desk summary::-webkit-details-marker{display:none}
+.drop{display:grid; place-items:center; text-align:center; min-height:150px; margin-bottom:14px; padding:12px; position:relative; overflow:hidden;
+  border:1.5px dashed var(--pencil); border-radius:12px; background:#fff; cursor:pointer}
+.drop:hover,.drop.over,.drop:focus-within{border-color:var(--green); background:#F6FAF4}
 .drop input{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%}
-.drop strong{font:400 1.1rem var(--display)}
-.drop .hint{color:var(--soft); font-size:.92rem}
-.drop img{max-width:100%; max-height:220px; border-radius:4px; display:none}
+.drop strong{font-family:var(--display); font-weight:700; font-variation-settings:"SOFT" 100,"WONK" 1; font-size:1.05rem}
+.drop .hint{color:var(--soft); font-size:.9rem}
+.drop img{max-width:100%; max-height:200px; border-radius:8px; display:none}
 .drop.has img{display:block} .drop.has .hint{display:none}
-
-.field{margin:0 0 12px}
-.field label{display:block; font-weight:800; margin-bottom:4px}
+.field{margin:0 0 11px}
+.field label{display:block; font-weight:800; font-size:.92rem; margin-bottom:3px}
 .field label small{font-weight:400; color:var(--soft)}
-.field input,.field textarea{width:100%; font:inherit; color:var(--ink); padding:8px 10px; border:2px solid var(--ink); border-radius:8px; background:#fff}
-.field textarea{min-height:64px; resize:vertical}
-.field input:focus-visible,.field textarea:focus-visible{outline:3px solid var(--bean); outline-offset:1px}
-
-button{font-family:inherit}
-.big{width:100%; font:400 1.2rem var(--display); padding:12px 16px; color:#fff; background:var(--bean);
-  border:2.5px solid var(--ink); border-radius:10px; box-shadow:4px 4px 0 var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s; margin-top:4px}
-.big.alt{background:var(--sun); color:var(--ink); margin-top:12px}
-.big:hover{transform:translate(-1px,-1px); box-shadow:5px 5px 0 var(--ink)}
-.big:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink)}
-.big:focus-visible,.small:focus-visible{outline:3px solid var(--pencil); outline-offset:3px}
-.big:disabled{opacity:.55; cursor:not-allowed; transform:none; box-shadow:4px 4px 0 var(--ink)}
-#status{min-height:1.5em; margin:12px 0 0; font-weight:600}
+.field input,.field textarea{width:100%; font:inherit; color:var(--ink); padding:8px 11px; border:1.5px solid var(--ink); border-radius:12px; background:#fff}
+.field textarea{min-height:58px; resize:vertical}
+.big{position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:6px;
+  font:800 1.12rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; padding:12px 16px; border-radius:14px; cursor:pointer;
+  color:#fff; background:var(--green); border:1.5px solid var(--ink); box-shadow:0 6px 16px rgba(42,36,56,.2); transition:transform .1s, box-shadow .1s}
+.big:hover{transform:translateY(-1px); box-shadow:0 9px 20px rgba(42,36,56,.24)}
+.big:active{transform:translateY(1px); box-shadow:0 3px 8px rgba(42,36,56,.2)}
+.big.alt{background:var(--gold); color:var(--ink); margin-top:10px}
+.big:disabled{opacity:.5; cursor:not-allowed; transform:none; box-shadow:none}
+.bean{width:18px; height:14px; opacity:0; transform:scale(0)}
+.big.ready .bean{opacity:1; transform:scale(1); animation:glint 1.4s ease-out 1}
+.big.ready::after{content:""; position:absolute; inset:0; background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%); transform:translateX(-120%); animation:shine 1.4s ease-out .2s 1}
+@keyframes glint{0%{transform:scale(0) rotate(-40deg)} 55%{transform:scale(1.35) rotate(12deg); filter:drop-shadow(0 0 6px #fff6d6)} 100%{transform:scale(1) rotate(0)}}
+@keyframes shine{to{transform:translateX(120%)}}
+#status{min-height:1.4em; margin:10px 0 0; font-weight:600; font-size:.95rem}
 #status.err{color:var(--bad)}
+.cast h2{margin:0 0 10px; font-size:1.1rem}
+.cast p{margin:10px 0 0; color:var(--soft); font-size:.88rem}
 
-.book{display:grid; gap:24px}
-.cast{display:grid; grid-template-columns:240px 1fr; gap:16px; align-items:center}
-.cast .frame{aspect-ratio:3/2}
-@media(max-width:620px){.cast{grid-template-columns:1fr}}
-.cast p{margin:0; color:var(--soft)}
-.pages{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px}
-@media(min-width:1700px){.pages{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@media(max-width:620px){.pages{grid-template-columns:1fr}}
+/* ---------- the book ---------- */
+.book{min-width:0; display:flex; flex-direction:column; gap:14px}
+.bookbar{display:flex; align-items:center; justify-content:space-between; gap:12px}
+#where{margin:0; font-size:1.25rem}
+.ghost{font:700 .95rem var(--body); padding:8px 14px; border-radius:12px; border:1.5px solid var(--ink); background:var(--paper); cursor:pointer; box-shadow:0 4px 12px rgba(42,36,56,.12)}
+.ghost[aria-pressed=true]{background:var(--dusk); color:var(--paper); border-color:var(--dusk)}
+.stage{display:flex; align-items:flex-start; justify-content:center; gap:14px}
+.turn{flex:none; align-self:center; width:46px; height:46px; border-radius:50%; border:1.5px solid var(--ink); background:var(--paper);
+  font:800 1.5rem/1 var(--body); cursor:pointer; box-shadow:var(--shadow); margin-bottom:60px}
+.turn:disabled{opacity:.3; cursor:default}
+.spread{display:flex; justify-content:center; align-items:flex-start; touch-action:pan-y}
+.page{width:var(--pw)}
+.page[hidden]{display:none}
 
-.frame{aspect-ratio:2/3; border:2px solid var(--ink); border-radius:4px; position:relative; overflow:hidden; background:#F4F8FC; container-type:inline-size}
-.frame > img{width:100%; height:100%; object-fit:cover; display:none}
+.frame{aspect-ratio:2/3; position:relative; overflow:hidden; background:var(--paper); border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); container-type:inline-size}
+.page.left .frame{border-radius:16px 0 0 16px; border-right-width:.75px}
+.page.right .frame{border-radius:0 16px 16px 0; border-left-width:.75px}
+.page.left .frame::before,.page.right .frame::before{content:""; position:absolute; top:0; bottom:0; width:12%; z-index:3; pointer-events:none}
+.page.left .frame::before{right:0; background:linear-gradient(to left, rgba(42,36,56,.28), transparent)}
+.page.right .frame::before{left:0; background:linear-gradient(to right, rgba(42,36,56,.28), transparent)}
+/* hardcover: spine strip plus stacked page edges */
+.page.cover .frame{border-radius:6px 14px 14px 6px;
+  box-shadow:2px 2px 0 var(--paper), 3px 3px 0 var(--shade), 5px 5px 0 var(--paper), 6px 6px 0 var(--shade), 8px 8px 0 var(--paper), 9px 9px 0 var(--shade), var(--shadow)}
+.page.cover .frame::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4.5%; z-index:3; pointer-events:none;
+  background:linear-gradient(to right, rgba(42,36,56,.45), rgba(255,255,255,.18) 55%, rgba(42,36,56,.2))}
+
+.frame > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none}
 [data-state=done] .frame > img{display:block}
 .sketch{position:absolute; inset:0; width:100%; height:100%}
 [data-state=done] .sketch{display:none}
-.sketch path{fill:none; stroke:var(--pencil); stroke-width:3; stroke-linecap:round; stroke-linejoin:round}
+.sketch path{fill:none; stroke:var(--pencil); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round}
 [data-state=loading] .sketch path{stroke-dasharray:600; stroke-dashoffset:600; animation:ink 1.6s ease-in-out infinite}
 [data-state=loading] .sketch path:nth-child(2){animation-delay:.25s}
 [data-state=loading] .sketch path:nth-child(3){animation-delay:.5s}
 @keyframes ink{0%{stroke-dashoffset:600}60%,100%{stroke-dashoffset:0}}
-.state{position:absolute; left:8px; top:8px; z-index:2; background:var(--sun); border:2px solid var(--ink); border-radius:6px; padding:2px 9px; font-weight:800; font-size:.85rem; display:none}
+/* the art arrives as a soft color wash fading into the picture */
+.fresh .frame > img{animation:reveal 1.1s ease-out}
+.fresh .frame::after{content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:linear-gradient(160deg, rgba(242,181,68,.75), rgba(52,57,107,.45)); animation:wash 1.1s ease-out forwards}
+@keyframes reveal{from{opacity:0; filter:saturate(.2) blur(3px)} to{opacity:1; filter:none}}
+@keyframes wash{from{opacity:1} to{opacity:0}}
+.state{position:absolute; left:8px; top:8px; z-index:4; background:var(--gold); border:1.5px solid var(--ink); border-radius:10px; padding:1px 9px; font-weight:800; font-size:.82rem; display:none}
 [data-state=loading] .state{display:block}
-[data-state=error] .state{display:block; background:#fff; color:var(--bad)}
+[data-state=error] .state{display:block; background:var(--paper); color:var(--bad)}
 
-/* story text, placed where the PDF puts it */
-/* sized to the page width so it matches the PDF (22pt text on a 432pt page, 36pt margins) */
-.story{position:absolute; left:8.3%; right:8.3%; padding:3.7cqw; border-radius:3.2cqw; text-align:center;
-  font:700 5.1cqw/1.27 var(--story); background:rgba(255,253,245,.82); color:var(--ink)}
+/* story text, placed where the PDF puts it (21pt Andika on a 432pt page, 36pt margins) */
+.story{position:absolute; z-index:1; left:8.3%; right:8.3%; padding:3.7cqw; border-radius:3.7cqw; text-align:center;
+  font:400 4.86cqw/1.33 var(--story); background:rgba(255,251,241,.88); color:var(--ink)}
 .story.bottom{bottom:6.2%} .story.top{top:6.2%}
-.story.dark{background:rgba(20,33,61,.82); color:var(--cream)}
-.story.cover-title{font-size:9.3cqw; line-height:1.1; padding:5cqw 4cqw; background:rgba(255,253,245,.85)}
-.story.cover-title i{display:block; font-size:5.1cqw; font-weight:400; margin-top:2cqw}
+.story.dark{background:rgba(52,57,107,.88); color:var(--paper)}
+.story.cover-title{left:0; right:0; border-radius:0; padding:5cqw 4cqw; background:rgba(52,57,107,.92); color:var(--paper);
+  font:800 8.8cqw/1.08 var(--display); font-variation-settings:"SOFT" 100,"WONK" 1}
+.story.cover-title i{display:block; margin-top:2cqw; font:italic 600 4.9cqw var(--display)}
+.page.dusk .controls .redraw{border-color:var(--dusk)}
 
-.page-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center}
-.small{font:400 .95rem var(--display); padding:6px 12px; color:var(--ink); background:var(--sun);
-  border:2px solid var(--ink); border-radius:8px; box-shadow:3px 3px 0 var(--ink); cursor:pointer}
-.small:disabled{opacity:.55; cursor:not-allowed; box-shadow:3px 3px 0 var(--ink)}
-.small.ghost{background:#fff}
-.change{display:flex; gap:6px; margin-top:10px}
-.change input{flex:1; min-width:0; font:inherit; font-size:.92rem; padding:6px 9px; border:2px solid var(--ink); border-radius:8px}
-.change input:focus-visible{outline:3px solid var(--bean)}
+/* About Me (built from the form, mirrors the PDF's last page) */
+.about .frame{display:flex; flex-direction:column; align-items:center; text-align:center; padding:10cqw 8cqw; font-family:var(--story)}
+.about h3{margin:0 0 5cqw; font:700 7.9cqw var(--story)}
+.about .portrait{width:46cqw; aspect-ratio:2/3; border-radius:3cqw; background:var(--shade) center/auto 100% no-repeat; border:1px solid rgba(42,36,56,.2)}
+.about .portrait.has{background-size:auto 100%; background-position:22% center}
+.about .name{margin:5cqw 0 1cqw; font:700 6cqw var(--story)}
+.about .age{margin:0 0 3cqw; font-size:4cqw}
+.about .fav-label{margin:0; font-style:italic; color:var(--soft); font-size:3.5cqw}
+.about .fav{margin:1cqw 0 0; font-size:3.5cqw}
+
+.controls{display:flex; flex-direction:column; gap:7px; margin-top:12px; padding:0 2px}
+.small{font:700 .92rem var(--body); padding:7px 12px; border-radius:12px; border:1.5px solid var(--ink); background:var(--gold); cursor:pointer; align-self:flex-start}
+.small:disabled{opacity:.5; cursor:not-allowed}
+.small.plain{background:var(--paper); align-self:auto}
+.change{display:flex; gap:6px}
+.change input{flex:1; min-width:0; font:inherit; font-size:.9rem; padding:6px 10px; border:1.5px solid var(--ink); border-radius:12px; background:#fff}
 [data-state=idle] .change,[data-state=loading] .change{display:none}
 
+/* ---------- the vine ribbon ---------- */
+.ribbon{position:relative; padding:18px 8px 6px; margin-top:4px}
+.ribbon .vine{position:absolute; left:0; right:0; top:40px; width:100%; height:44px; overflow:visible}
+.ribbon .vine path{fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round; vector-effect:non-scaling-stroke; opacity:.85}
+.ribbon ol{position:relative; display:flex; justify-content:space-around; gap:8px; margin:0; padding:0; list-style:none}
+.node{position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0; padding:4px; cursor:pointer; font:700 .8rem var(--body)}
+.node .thumb{width:38px; height:57px; border-radius:6px; background:var(--paper); border:1.5px solid var(--ink); overflow:hidden; box-shadow:0 4px 10px rgba(42,36,56,.15)}
+.node .thumb img{width:100%; height:100%; object-fit:cover; display:none}
+.node[data-state=done] .thumb img[src]{display:block}
+.node[aria-current=true] .thumb{outline:3px solid var(--gold); outline-offset:2px}
+.node .dot{width:8px; height:8px; border-radius:50%; background:var(--pencil)}
+.node[data-state=loading] .dot{background:var(--gold); animation:pulse 1s ease-in-out infinite}
+.node[data-state=done] .dot{background:var(--green)}
+.node[data-state=error] .dot{background:var(--bad)}
+@keyframes pulse{50%{transform:scale(1.6)}}
+.node .leaf{position:absolute; top:-6px; right:-12px; width:24px; height:20px; transform:scale(0) rotate(-30deg); transform-origin:0% 100%; transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+li:nth-child(even) .node .leaf{right:auto; left:-12px; transform-origin:100% 100%}
+.node[data-state=done] .leaf{transform:scale(1) rotate(-12deg)}
+li:nth-child(even) .node[data-state=done] .leaf{transform:scale(-1,1) rotate(-12deg)}
+.leaf path{fill:var(--green)} .leaf .vein{fill:none; stroke:#9fd2a9; stroke-width:1.2}
+
+/* ---------- reading mode ---------- */
+body.reading .rail, body.reading .controls{display:none}
+body.reading .app{grid-template-columns:1fr}
+body.reading{--pw:clamp(240px, calc((100vh - 230px) * .6667), 560px)}
+
+/* ---------- phone: one page at a time, desk collapsible, ribbon pinned ---------- */
+@media (max-width:900px){
+  .app{grid-template-columns:1fr; padding:16px 16px 0; gap:16px}
+  .rail{position:static}
+  .brand h1{font-size:1.9rem}
+  .desk summary{cursor:pointer; margin-bottom:0}
+  .desk summary::after{content:" ▾"; font-size:.9rem}
+  .desk[open] summary{margin-bottom:12px}
+  .desk[open] summary::after{content:" ▴"}
+  :root{--pw:min(100%, 440px)}
+  .stage{gap:8px}
+  .spread{flex:1; min-width:0}
+  .turn{width:38px; height:38px; font-size:1.2rem}
+  .cast{display:grid; grid-template-columns:120px 1fr; column-gap:12px; align-items:center; padding:12px}
+  .cast .frame{grid-row:1 / 3; width:120px}
+  .cast h2{margin:0; align-self:end}
+  .cast p{margin:4px 0 0; align-self:start}
+  .ribbon{position:sticky; bottom:0; z-index:10; background:linear-gradient(to top, var(--desk) 75%, transparent); padding-bottom:10px}
+}
 @media (prefers-reduced-motion:reduce){
   [data-state=loading] .sketch path{animation:none; stroke-dashoffset:0}
+  .fresh .frame > img,.fresh .frame::after{animation:none} .fresh .frame::after{display:none}
+  .node .leaf{transition:none} .node[data-state=loading] .dot{animation:none}
+  .big.ready .bean,.big.ready::after{animation:none} .big.ready::after{display:none}
   .big{transition:none}
 }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Beanstalk Storybook Studio</h1>
-    <p class="lede">Upload a child's photo and we draw them as Jack on the first three pages of the story, then bind it all into a PDF with a cover and an About Me page.</p>
-  </header>
+{% set sketch %}
+<svg class="sketch" viewBox="0 0 200 300" aria-hidden="true">
+  <path d="M100 260 C 96 200, 108 150, 98 90 C 92 60, 112 45, 118 27"/>
+  <path d="M98 180 C 70 177, 60 150, 56 126 C 78 123, 92 144, 98 180 Z"/>
+  <path d="M102 135 C 130 135, 142 108, 144 84 C 122 84, 106 102, 102 135 Z"/>
+</svg>
+{% endset %}
+<div class="app">
+  <aside class="rail">
+    <header class="brand">
+      <h1 class="display">Beanstalk Storybook</h1>
+      <p>A picture book starring your child, ready to download as a PDF.</p>
+    </header>
 
-  <main class="studio">
-    <form class="sheet desk" id="desk" onsubmit="return false">
-      <div class="pegs"><i></i><i></i><i></i></div>
-      <h2>Your drawing desk</h2>
-      <label class="drop" id="drop">
-        <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" aria-label="Upload the child's photo">
-        <img id="preview" alt="The uploaded photo">
-        <span class="hint"><strong>Drop a photo here</strong><br>or click to choose one. A clear, front-facing face works best.</span>
-      </label>
-      <div class="field"><label for="name">Child's name</label><input id="name" maxlength="40" autocomplete="off"></div>
-      <div class="field"><label for="age">Age <small>(optional)</small></label><input id="age" inputmode="numeric" maxlength="3" autocomplete="off"></div>
-      <div class="field"><label for="favorites">Favorite things <small>(optional)</small></label><textarea id="favorites" maxlength="300" placeholder="Dinosaurs, pancakes, the color green"></textarea></div>
-      <button class="big" id="make" type="button">Make the book</button>
-      <button class="big alt" id="download" type="button" disabled>Download PDF</button>
-      <p id="status" role="status" aria-live="polite"></p>
-    </form>
+    <details class="card desk" id="deskbox" open>
+      <summary class="display">Make your book</summary>
+      <form id="desk" onsubmit="return false">
+        <label class="drop" id="drop">
+          <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" aria-label="Upload the child's photo">
+          <img id="preview" alt="The uploaded photo">
+          <span class="hint"><strong>Drop a photo here</strong><br>or click to choose one. A clear, front-facing face works best.</span>
+        </label>
+        <div class="field"><label for="name">Child's name</label><input id="name" maxlength="40" autocomplete="off"></div>
+        <div class="field"><label for="age">Age <small>(optional)</small></label><input id="age" inputmode="numeric" maxlength="3" autocomplete="off"></div>
+        <div class="field"><label for="favorites">Favorite things <small>(optional)</small></label><textarea id="favorites" maxlength="300" placeholder="Dinosaurs, pancakes, the color green"></textarea></div>
+        <button class="big" id="make" type="button">Make the book</button>
+        <button class="big alt" id="download" type="button" disabled>
+          <svg class="bean" viewBox="0 0 18 14" aria-hidden="true"><ellipse cx="9" cy="7" rx="8" ry="5.5" fill="#FFF3C4" stroke="#2A2438" stroke-width="1.2"/><ellipse cx="6.5" cy="5.5" rx="2.2" ry="1.2" fill="#fff"/></svg>
+          Download PDF
+        </button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </form>
+    </details>
 
-    <section class="book" aria-label="Storybook">
-      <article class="sheet" id="ref" data-state="idle">
-        <div class="pegs"><i></i><i></i><i></i></div>
-        <div class="cast">
-          <div class="frame">
-            <svg class="sketch" viewBox="0 0 150 100" aria-hidden="true">
-              <path d="M45 18 a9 9 0 1 0 0.1 0 Z M45 36 L45 66 M32 46 L58 46 M45 66 L36 90 M45 66 L54 90"/><path d="M105 14 a10 10 0 1 0 0.1 0 Z M105 34 L94 90 L116 90 Z"/><path d="M92 50 L118 50"/>
-            </svg>
-            <img alt="Face reference: the child as Jack, next to his mother">
-            <div class="state" id="state-ref">Inking...</div>
-          </div>
-          <div>
-            <h2>Meet your cast</h2>
-            <p>Jack's and his mother's faces are drawn first, from the photo, and every page uses them. The cow, the cottage, the beans and their clothes are kept the same with fixed descriptions.</p>
-          </div>
-        </div>
-      </article>
+    <section class="card cast" id="ref" data-state="idle" aria-label="Your cast">
+      <h2 class="display">Your cast</h2>
+      <div class="frame" style="aspect-ratio:3/2">
+        <svg class="sketch" viewBox="0 0 150 100" aria-hidden="true">
+          <path d="M45 22 a12 12 0 1 0 0.1 0 Z M28 80 C 30 58, 60 58, 62 80"/>
+          <path d="M105 20 a13 13 0 1 0 0.1 0 Z M86 82 C 88 58, 122 58, 124 82"/>
+          <path d="M92 18 C 98 4, 114 4, 118 18"/>
+        </svg>
+        <img alt="Face reference: the child as Jack, next to his mother">
+        <div class="state" id="state-ref">Inking...</div>
+      </div>
+      <p>Jack's and his mother's faces are drawn first from the photo, and every page reuses them.</p>
+    </section>
+  </aside>
 
-      <div class="pages">
+  <main class="book">
+    <div class="bookbar">
+      <p id="where" class="display" aria-live="polite">Front cover</p>
+      <button class="ghost" id="reading" type="button" aria-pressed="false">Reading mode</button>
+    </div>
+
+    <div class="stage">
+      <button class="turn" id="prev" type="button" aria-label="Previous pages">&#8249;</button>
+      <div class="spread" id="spread">
         {% for p in [cover] + pages %}
-        {% set label = "Cover" if p.id == "cover" else "Page " ~ loop.index0 %}
-        <article class="sheet page" id="page-{{p.id}}" data-state="idle" data-label="{{ label }}">
-          <div class="pegs"><i></i><i></i><i></i></div>
-          <h2>{{ p.title if p.id == "cover" else label ~ ": " ~ p.title }}</h2>
+        {% set label = "Front cover" if p.id == "cover" else "Page " ~ loop.index0 %}
+        <article class="page{{ ' cover' if p.id == 'cover' }}{{ ' dusk' if p.tone == 'dark' }}" id="page-{{p.id}}" data-id="{{p.id}}" data-label="{{ label }}" data-state="idle">
           <div class="frame">
-            <svg class="sketch" viewBox="0 0 200 300" aria-hidden="true">
-              <path d="M100 260 C 96 200, 108 150, 98 90 C 92 60, 112 45, 118 27"/>
-              <path d="M98 180 C 70 177, 60 150, 56 126 C 78 123, 92 144, 98 180 Z"/>
-              <path d="M102 135 C 130 135, 142 108, 144 84 C 122 84, 106 102, 102 135 Z"/>
-            </svg>
+            {{ sketch }}
             <img alt="{{ label }} illustration">
             {% if p.id == "cover" %}
             <div class="story top cover-title">Jack and the Beanstalk<i id="cover-name">starring your child</i></div>
@@ -172,29 +261,65 @@ button{font-family:inherit}
             {% endif %}
             <div class="state" id="state-{{p.id}}">Inking...</div>
           </div>
-          <div class="page-actions">
-            <button class="small" type="button" data-redraw="{{p.id}}" disabled>Draw {{ label|lower }}</button>
-          </div>
-          <div class="change">
-            <input type="text" maxlength="200" placeholder="Change one thing, e.g. make the cow brown" aria-label="Change one thing on the {{ label|lower }}" data-change-input="{{p.id}}">
-            <button class="small ghost" type="button" data-change="{{p.id}}">Apply</button>
+          <div class="controls">
+            <button class="small redraw" type="button" data-redraw="{{p.id}}" disabled>Draw {{ label|lower }}</button>
+            <div class="change">
+              <input type="text" maxlength="200" placeholder="Change one thing, e.g. make the cow brown" aria-label="Change one thing on the {{ label|lower }}" data-change-input="{{p.id}}">
+              <button class="small plain" type="button" data-change="{{p.id}}">Apply</button>
+            </div>
           </div>
         </article>
         {% endfor %}
+        <article class="page about" id="page-about" data-id="about" data-label="About Me" data-state="idle">
+          <div class="frame">
+            <h3>About Me</h3>
+            <div class="portrait" id="about-portrait" role="img" aria-label="Jack's face from the cast drawing"></div>
+            <p class="name" id="about-name">Your child's name</p>
+            <p class="age" id="about-age"></p>
+            <p class="fav-label" id="about-fav-label" hidden>My favorite things</p>
+            <p class="fav" id="about-fav"></p>
+          </div>
+        </article>
       </div>
-    </section>
+      <button class="turn" id="next" type="button" aria-label="Next pages">&#8250;</button>
+    </div>
+
+    <nav class="ribbon" aria-label="Pages">
+      <svg class="vine" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 22 C 80 2, 170 42, 250 22 S 420 2, 500 22 S 670 42, 750 22 S 920 2, 1000 22"/>
+      </svg>
+      <ol>
+        {% for p in [cover] + pages %}
+        <li><button class="node" type="button" data-go="{{p.id}}" data-state="idle" aria-label="Go to {{ 'the front cover' if p.id == 'cover' else 'page ' ~ loop.index0 }}">
+          <svg class="leaf" viewBox="0 0 24 20" aria-hidden="true"><path d="M1 19 C 3 7, 12 1, 23 1 C 22 11, 14 19, 1 19 Z"/><path class="vein" d="M2 18 C 8 12, 14 7, 21 3"/></svg>
+          <span class="thumb"><img alt=""></span>
+          <span>{{ "Cover" if p.id == "cover" else loop.index0 }}</span>
+          <span class="dot"></span>
+        </button></li>
+        {% endfor %}
+        <li><button class="node" type="button" data-go="about" data-state="idle" aria-label="Go to About Me">
+          <svg class="leaf" viewBox="0 0 24 20" aria-hidden="true"><path d="M1 19 C 3 7, 12 1, 23 1 C 22 11, 14 19, 1 19 Z"/><path class="vein" d="M2 18 C 8 12, 14 7, 21 3"/></svg>
+          <span class="thumb"><img alt=""></span>
+          <span>About</span>
+          <span class="dot"></span>
+        </button></li>
+      </ol>
+    </nav>
   </main>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-// Every sheet that gets drawn from the face reference: the cover, then the story pages.
-const PAGES = [...document.querySelectorAll(".pages .page")].map(el => el.id.replace("page-", ""));
-const LABEL = Object.fromEntries(PAGES.map(id => [id, $("page-" + id).dataset.label]));
+const SHEETS = [...document.querySelectorAll("#spread .page")].map(el => el.dataset.id);  // cover, pages, about
+const DRAWN = SHEETS.filter(id => id !== "about");  // the sheets that get generated art
+const LABEL = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.label]));
 const drop = $("drop"), photo = $("photo"), make = $("make"), download = $("download"), status = $("status");
 const book = { ref: null, pages: {} };
 const busy = new Set();
+const narrow = matchMedia("(max-width: 900px)");
+let current = 0;  // index into SHEETS of a page in view
 
+// ---------- photo ----------
 photo.addEventListener("change", showPreview);
 ["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
 ["dragleave","drop"].forEach(e => drop.addEventListener(e, () => drop.classList.remove("over")));
@@ -206,23 +331,90 @@ function showPreview() {
   drop.classList.add("has");
 }
 
+// ---------- turning pages ----------
+function spreads() {
+  if (narrow.matches) return SHEETS.map(id => [id]);
+  const s = [[SHEETS[0]]];  // the cover shows alone, then two pages per spread
+  for (let i = 1; i < SHEETS.length; i += 2) s.push(SHEETS.slice(i, i + 2));
+  return s;
+}
+const spreadOf = id => spreads().findIndex(s => s.includes(id));
+function show(id) { current = SHEETS.indexOf(id); render(); }
+function turn(step) {
+  const sp = spreads(), i = spreadOf(SHEETS[current]) + step;
+  if (i >= 0 && i < sp.length) show(sp[i][0]);
+}
+function render() {
+  const sp = spreads(), i = spreadOf(SHEETS[current]), visible = sp[i];
+  SHEETS.forEach(id => {
+    const el = $("page-" + id), on = visible.includes(id);
+    el.hidden = !on;
+    el.classList.toggle("left", on && visible.length === 2 && visible[0] === id);
+    el.classList.toggle("right", on && visible.length === 2 && visible[1] === id);
+  });
+  document.querySelectorAll(".node").forEach(n => n.setAttribute("aria-current", visible.includes(n.dataset.go)));
+  $("prev").disabled = i === 0;
+  $("next").disabled = i === sp.length - 1;
+  $("where").textContent = visible.map(id => LABEL[id]).join(" and ");
+}
+$("prev").onclick = () => turn(-1);
+$("next").onclick = () => turn(1);
+document.querySelectorAll(".node").forEach(n => n.onclick = () => show(n.dataset.go));
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea")) return;
+  if (e.key === "ArrowLeft") turn(-1);
+  if (e.key === "ArrowRight") turn(1);
+});
+let swipeX = null;
+$("spread").addEventListener("pointerdown", e => { if (!e.target.closest("input, button")) swipeX = e.clientX; });
+$("spread").addEventListener("pointerup", e => {
+  if (swipeX === null) return;
+  const dx = e.clientX - swipeX; swipeX = null;
+  if (Math.abs(dx) > 50) turn(dx < 0 ? 1 : -1);
+});
+narrow.addEventListener("change", render);
+$("deskbox").addEventListener("toggle", () => { if (!narrow.matches) $("deskbox").open = true; });  // only collapsible on phones
+$("reading").onclick = () => {
+  const on = document.body.classList.toggle("reading");
+  $("reading").setAttribute("aria-pressed", on);
+  $("reading").textContent = on ? "Exit reading mode" : "Reading mode";
+};
+
+// ---------- state ----------
 function say(msg, isErr) { status.textContent = msg; status.className = isErr ? "err" : ""; }
 function sheet(id) { return id === "ref" ? $("ref") : $("page-" + id); }
+const node = id => document.querySelector(`.node[data-go="${id}"]`);
 function setState(id, state, msg) {
   sheet(id).dataset.state = state;
   $("state-" + id).textContent = msg || "Inking...";
+  if (node(id)) node(id).dataset.state = state;
+}
+function updateAbout() {
+  const name = $("name").value.trim(), age = $("age").value.trim(), fav = $("favorites").value.trim();
+  $("cover-name").textContent = `starring ${name || "your child"}`;
+  $("about-name").textContent = name || "Your child's name";
+  $("about-age").textContent = age ? `Age ${age}` : "";
+  $("about-fav-label").hidden = !fav;
+  $("about-fav").textContent = fav;
+  const ready = !!name && DRAWN.every(id => book.pages[id]);
+  $("page-about").dataset.state = node("about").dataset.state = ready ? "done" : "idle";
 }
 function refresh() {
   make.disabled = busy.size > 0;
-  PAGES.forEach(id => {
+  DRAWN.forEach(id => {
     const b = document.querySelector(`[data-redraw="${id}"]`);
     b.disabled = !book.ref || busy.has(id) || busy.has("ref");
     b.textContent = `${book.pages[id] ? "Redraw" : "Draw"} ${LABEL[id].toLowerCase()}`;
     document.querySelector(`[data-change="${id}"]`).disabled = busy.has(id);
   });
-  download.disabled = busy.size > 0 || !PAGES.every(id => book.pages[id]);
+  const done = DRAWN.every(id => book.pages[id]);
+  download.disabled = busy.size > 0 || !done;
+  download.classList.toggle("ready", done && busy.size === 0);
+  updateAbout();
 }
+["name", "age", "favorites"].forEach(id => $(id).addEventListener("input", updateAbout));
 
+// ---------- images ----------
 // Phone photos are large; downscale to 1024px JPEG in the browser before uploading.
 async function shrink(file) {
   try {
@@ -257,9 +449,18 @@ async function task(id, work) {
   busy.add(id); setState(id, "loading"); refresh();
   try {
     const image = await work();
-    sheet(id).querySelector(".frame > img").src = image;
-    if (id === "ref") book.ref = image; else book.pages[id] = image;
+    const el = sheet(id);
+    el.querySelector(".frame > img").src = image;
+    if (id === "ref") {
+      book.ref = image;
+      $("about-portrait").style.backgroundImage = `url(${image})`;
+      $("about-portrait").classList.add("has");
+    } else {
+      book.pages[id] = image;
+      node(id).querySelector(".thumb img").src = image;
+    }
     setState(id, "done");
+    el.classList.remove("fresh"); void el.offsetWidth; el.classList.add("fresh");  // replay the color wash
   } catch (e) {
     const previous = id === "ref" ? book.ref : book.pages[id];
     setState(id, previous ? "done" : "error", "Not drawn");  // a failed redraw keeps the old picture
@@ -272,16 +473,19 @@ make.onclick = async () => {
   const file = photo.files[0];
   if (!file) { say("Choose a photo first.", true); photo.focus(); return; }
   if (!$("name").value.trim()) { say("Type the child's name first.", true); $("name").focus(); return; }
-  book.pages = {}; PAGES.forEach(id => setState(id, "idle"));
-  say("Drawing the character first. This takes about a minute.");
+  book.pages = {};
+  DRAWN.forEach(id => { setState(id, "idle"); node(id).querySelector(".thumb img").removeAttribute("src"); });
+  show("cover");
+  if (narrow.matches) { $("deskbox").open = false; document.querySelector(".book").scrollIntoView({ behavior: "smooth" }); }
+  say("Drawing the cast first. This takes about a minute.");
   try {
     await task("ref", async () => post("/reference", { photo: await shrink(file) }));
-  } catch (e) { say(`Meet your cast: ${e.message}`, true); return; }
+  } catch (e) { say(`Your cast: ${e.message}`, true); return; }
   say("Drawing the cover and all three pages. This takes about a minute.");
   // One request per page, sent together. Each request makes exactly one API call; no retries.
-  const results = await Promise.allSettled(PAGES.map(drawPage));
-  const failed = results.map((r, i) => r.status === "rejected" ? `${LABEL[PAGES[i]]}: ${r.reason.message}` : null).filter(Boolean);
-  say(failed.length ? failed.join(" ") : "Done. Read it over, then download the PDF.", failed.length > 0);
+  const results = await Promise.allSettled(DRAWN.map(drawPage));
+  const failed = results.map((r, i) => r.status === "rejected" ? `${LABEL[DRAWN[i]]}: ${r.reason.message}` : null).filter(Boolean);
+  say(failed.length ? failed.join(" ") : "Done. Turn the pages, then download the PDF.", failed.length > 0);
 };
 
 document.querySelectorAll("[data-redraw]").forEach(b => b.onclick = async () => {
@@ -310,7 +514,7 @@ download.onclick = async () => {
   download.disabled = true; say("Binding the book...");
   try {
     const pages = {};
-    for (const id of PAGES) pages[id] = await toJpeg(book.pages[id]);
+    for (const id of DRAWN) pages[id] = await toJpeg(book.pages[id]);
     const r = await fetch("/pdf", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, age: $("age").value.trim(), favorites: $("favorites").value.trim(),
                              reference: await toJpeg(book.ref), pages }) });
@@ -321,9 +525,8 @@ download.onclick = async () => {
   } catch (e) { say(e.message, true); }
   refresh();
 };
-const coverName = () => { $("cover-name").textContent = `starring ${$("name").value.trim() || "your child"}`; };
-$("name").addEventListener("input", coverName);
-coverName();
+
+render();
 refresh();
 </script>
 </body>
