@@ -6,97 +6,167 @@
 <title>Beanstalk Storybook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,600..900,0..100,0..1;1,9..144,600..900,0..100,0..1&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..900,0..100,0..1;1,9..144,400..900,0..100,0..1&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --desk:#F3E9D2; --shade:#E8DABA; --paper:#FFFBF1; --ink:#2A2438; --soft:#5A5266;
   --green:#2F7D4A; --gold:#F2B544; --dusk:#34396B; --pencil:#8A7F9A; --bad:#B3261E;
   --shadow:0 10px 30px rgba(42,36,56,.18);
   --display:"Fraunces",Georgia,serif; --body:"Nunito",system-ui,sans-serif; --story:"Andika",system-ui,sans-serif;
-  --pw:clamp(220px, calc((100vh - 300px) * .6667), 440px);  /* one book page: 2:3, sized to fit the screen */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .14 0 0 0 0 .22 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --pw:clamp(220px, calc((100vh - 330px) * .6667), 430px);  /* one book page: 2:3, sized to fit the screen */
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0; min-height:100vh; color:var(--ink); font:400 1rem/1.5 var(--body);
-  background:radial-gradient(ellipse at 50% 30%, var(--desk) 0%, var(--desk) 55%, var(--shade) 100%) fixed; background-color:var(--desk)}
+/* the desk: parchment, paper grain, and a pool of warm lamp light over the book */
+body{margin:0; min-height:100vh; color:var(--ink); font:400 1rem/1.5 var(--body); background-color:var(--desk);
+  background-image:var(--grain),
+    radial-gradient(ellipse 60% 55% at 62% 18%, rgba(255,244,214,.95), rgba(255,244,214,0) 70%),
+    radial-gradient(ellipse at 50% 40%, var(--desk) 45%, var(--shade) 100%);
+  background-attachment:fixed}
 .display{font-family:var(--display); font-weight:800; font-variation-settings:"SOFT" 100, "WONK" 1}
+.script{font-family:var(--display); font-style:italic; font-weight:500; font-variation-settings:"SOFT" 100, "WONK" 1}
 button{font-family:inherit; color:inherit}
 :focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+[hidden]{display:none !important}
 
-.app{display:grid; grid-template-columns:320px minmax(0,1fr); gap:28px; max-width:1500px; margin:0 auto; padding:24px 20px 32px}
+.app{display:grid; grid-template-columns:330px minmax(0,1fr); gap:34px; max-width:1500px; margin:0 auto; padding:26px 22px 28px}
 
-/* ---------- rail: the desk ---------- */
-.rail{display:flex; flex-direction:column; gap:18px; align-self:start; position:sticky; top:20px}
-.brand h1{margin:0; font-size:2.3rem; line-height:1.02; letter-spacing:-.01em}
-.brand p{margin:6px 0 0; color:var(--soft)}
-.card{background:var(--paper); border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); padding:16px}
-.desk summary{list-style:none; cursor:default; font-size:1.25rem; margin-bottom:12px}
+/* ---------- rail ---------- */
+.rail{display:flex; flex-direction:column; gap:20px; align-self:start}
+.brand .kicker{margin:0 0 2px; color:var(--soft); font-size:1rem}
+.brand h1{margin:0; font-size:2.5rem; line-height:.98; letter-spacing:-.015em}
+.flourish{display:block; width:190px; height:26px; margin-top:6px}
+.flourish path{fill:none; stroke:var(--green); stroke-width:2; stroke-linecap:round}
+.flourish .lf{fill:var(--green); stroke:none}
+.card{position:relative; background:var(--paper); background-image:var(--grain); border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); padding:18px}
+.desk summary{list-style:none; cursor:default; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:8px; margin-bottom:14px}
 .desk summary::-webkit-details-marker{display:none}
-.drop{display:grid; place-items:center; text-align:center; min-height:150px; margin-bottom:14px; padding:12px; position:relative; overflow:hidden;
-  border:1.5px dashed var(--pencil); border-radius:12px; background:#fff; cursor:pointer}
-.drop:hover,.drop.over,.drop:focus-within{border-color:var(--green); background:#F6FAF4}
-.drop input{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%}
-.drop strong{font-family:var(--display); font-weight:700; font-variation-settings:"SOFT" 100,"WONK" 1; font-size:1.05rem}
-.drop .hint{color:var(--soft); font-size:.9rem}
-.drop img{max-width:100%; max-height:200px; border-radius:8px; display:none}
-.drop.has img{display:block} .drop.has .hint{display:none}
-.field{margin:0 0 11px}
-.field label{display:block; font-weight:800; font-size:.92rem; margin-bottom:3px}
-.field label small{font-weight:400; color:var(--soft)}
-.field input,.field textarea{width:100%; font:inherit; color:var(--ink); padding:8px 11px; border:1.5px solid var(--ink); border-radius:12px; background:#fff}
-.field textarea{min-height:58px; resize:vertical}
-.big{position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:6px;
+.desk summary .display{font-size:1.3rem}
+.desk summary .script{flex-basis:100%; order:3; color:var(--soft); font-size:.95rem}
+
+/* the photo: a taped polaroid */
+.polaroid{display:block; position:relative; width:78%; margin:4px auto 22px; padding:10px 10px 0; background:#fff; border-radius:3px;
+  box-shadow:0 8px 18px rgba(42,36,56,.2); transform:rotate(-2.2deg); cursor:pointer; transition:transform .2s}
+.polaroid:hover,.polaroid.over,.polaroid:focus-within{transform:rotate(0)}
+.polaroid input{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; z-index:3}
+.tape{position:absolute; top:-11px; left:50%; width:86px; height:24px; transform:translateX(-50%) rotate(3deg); z-index:2;
+  background:rgba(242,181,68,.55); box-shadow:0 1px 2px rgba(42,36,56,.15); clip-path:polygon(3% 0,97% 4%,100% 50%,96% 100%,2% 96%,0 50%)}
+.photo{display:grid; place-items:center; aspect-ratio:1; overflow:hidden; text-align:center;
+  background:repeating-linear-gradient(45deg,#F7F1E3,#F7F1E3 8px,#F1E8D3 8px,#F1E8D3 16px); color:var(--soft)}
+.photo img{width:100%; height:100%; object-fit:cover; display:none}
+.polaroid.has .photo img{display:block} .polaroid.has .hint{display:none}
+.hint b{display:block; font:700 1.05rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; color:var(--ink)}
+.hint small{font-size:.85rem}
+.caption{display:block; text-align:center; padding:9px 0 11px; font-size:.98rem; color:var(--soft)}
+
+/* the name: a bookplate */
+.bookplate{position:relative; margin:0 0 16px; padding:14px 16px 12px; text-align:center; border:1.5px solid var(--dusk); border-radius:12px;
+  outline:1px solid var(--dusk); outline-offset:-6px; background:linear-gradient(#FFFBF1,#FBF3DF)}
+.bookplate::before,.bookplate::after{content:"\2766"; position:absolute; top:6px; color:var(--gold); font-size:1rem}
+.bookplate::before{left:12px} .bookplate::after{right:12px; transform:scaleX(-1)}
+.plate-top{margin:0 0 2px; color:var(--dusk); font-size:1rem}
+.line-input{width:100%; border:0; border-bottom:1.5px solid var(--ink); background:transparent; color:var(--ink); padding:2px 4px; border-radius:0}
+.line-input:focus-visible{outline:none; border-bottom-color:var(--green); box-shadow:0 2px 0 var(--green)}
+.plate-name{font:700 1.45rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; text-align:center}
+.plate-name::placeholder{color:#b9aec4; font-weight:500; font-style:italic}
+.plate-age{display:inline-flex; align-items:baseline; gap:6px; margin-top:8px; color:var(--soft); font-size:.95rem}
+.plate-age input{width:3.2em; text-align:center; font:600 1.05rem var(--body)}
+/* favorite things: lined notebook paper */
+.lined{display:block; margin:0 0 6px}
+.lined > span{display:block; font-size:.98rem; color:var(--soft); margin-bottom:2px}
+.lined textarea{width:100%; min-height:84px; resize:vertical; border:0; padding:3px 6px 0 30px; font:400 1rem/28px var(--story); color:var(--ink);
+  background:linear-gradient(90deg, transparent 22px, rgba(179,38,30,.35) 22px, rgba(179,38,30,.35) 23.5px, transparent 23.5px),
+             repeating-linear-gradient(transparent 0 27px, rgba(52,57,107,.22) 27px 28px); border-radius:0}
+.lined textarea:focus-visible{outline:2px solid var(--green); outline-offset:2px}
+
+.big{position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:10px;
   font:800 1.12rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; padding:12px 16px; border-radius:14px; cursor:pointer;
-  color:#fff; background:var(--green); border:1.5px solid var(--ink); box-shadow:0 6px 16px rgba(42,36,56,.2); transition:transform .1s, box-shadow .1s}
-.big:hover{transform:translateY(-1px); box-shadow:0 9px 20px rgba(42,36,56,.24)}
+  color:#fff; background:var(--green); border:1.5px solid var(--ink); box-shadow:0 6px 16px rgba(42,36,56,.22), inset 0 1px 0 rgba(255,255,255,.25); transition:transform .1s, box-shadow .1s}
+.big:hover{transform:translateY(-1px); box-shadow:0 9px 20px rgba(42,36,56,.26), inset 0 1px 0 rgba(255,255,255,.25)}
 .big:active{transform:translateY(1px); box-shadow:0 3px 8px rgba(42,36,56,.2)}
-.big.alt{background:var(--gold); color:var(--ink); margin-top:10px}
+.big.alt{background:var(--gold); color:var(--ink)}
 .big:disabled{opacity:.5; cursor:not-allowed; transform:none; box-shadow:none}
+.big svg{flex:none}
 .bean{width:18px; height:14px; opacity:0; transform:scale(0)}
 .big.ready .bean{opacity:1; transform:scale(1); animation:glint 1.4s ease-out 1}
-.big.ready::after{content:""; position:absolute; inset:0; background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%); transform:translateX(-120%); animation:shine 1.4s ease-out .2s 1}
+.big.ready::after{content:""; position:absolute; inset:0; background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.7) 50%,transparent 65%); transform:translateX(-120%); animation:shine 1.4s ease-out .2s 1}
+.sparkle{position:absolute; right:14px; top:6px; width:14px; height:14px; opacity:0}
+.big.ready .sparkle{animation:twinkle 1.6s ease-out .5s 1}
 @keyframes glint{0%{transform:scale(0) rotate(-40deg)} 55%{transform:scale(1.35) rotate(12deg); filter:drop-shadow(0 0 6px #fff6d6)} 100%{transform:scale(1) rotate(0)}}
 @keyframes shine{to{transform:translateX(120%)}}
-#status{min-height:1.4em; margin:10px 0 0; font-weight:600; font-size:.95rem}
-#status.err{color:var(--bad)}
-.cast h2{margin:0 0 10px; font-size:1.1rem}
-.cast p{margin:10px 0 0; color:var(--soft); font-size:.88rem}
+@keyframes twinkle{0%,100%{opacity:0; transform:scale(.4)} 40%{opacity:1; transform:scale(1.1) rotate(20deg)}}
+/* status: a little handwritten note */
+#status{margin:14px 0 0; padding:9px 12px 9px 36px; position:relative; border-radius:4px 12px 12px 12px; background:#FFF6DA; box-shadow:0 3px 8px rgba(42,36,56,.12);
+  font:italic 500 .98rem/1.35 var(--display); font-variation-settings:"SOFT" 100,"WONK" 1}
+#status::before{content:""; position:absolute; left:11px; top:11px; width:16px; height:16px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 14l1-4 8-8 3 3-8 8z' fill='%23F2B544' stroke='%232A2438' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M2 14l1-4 3 3z' fill='%232A2438'/%3E%3C/svg%3E") no-repeat}
+#status:empty{display:none}
+#status.err{background:#FDE8E4; color:var(--bad)}
+
+/* the cast: a framed portrait with a plaque */
+.cast{text-align:center}
+.cast h2{margin:0 0 12px; font-size:1.15rem}
+.portrait-frame{padding:8px; border-radius:10px; background:linear-gradient(135deg,#E9C46A,#C89B3C 45%,#F2D48A 70%,#B8862E); box-shadow:inset 0 0 0 1px rgba(42,36,56,.4), 0 6px 14px rgba(42,36,56,.2)}
+.portrait-frame .frame{border-radius:4px; border:1px solid rgba(42,36,56,.5); box-shadow:inset 0 0 0 4px var(--paper)}
+.plaque{display:inline-block; margin:12px 0 0; padding:2px 14px; border-radius:6px; font-size:.95rem;
+  background:linear-gradient(#F6DC93,#E2B653); border:1px solid #9C7426; color:var(--ink); box-shadow:0 2px 4px rgba(42,36,56,.2)}
+.cast .note-text{margin:8px 0 0; color:var(--soft); font-size:.86rem}
 
 /* ---------- the book ---------- */
-.book{min-width:0; display:flex; flex-direction:column; gap:14px}
-.bookbar{display:flex; align-items:center; justify-content:space-between; gap:12px}
-#where{margin:0; font-size:1.25rem}
-.ghost{font:700 .95rem var(--body); padding:8px 14px; border-radius:12px; border:1.5px solid var(--ink); background:var(--paper); cursor:pointer; box-shadow:0 4px 12px rgba(42,36,56,.12)}
+.book{min-width:0; display:flex; flex-direction:column; gap:10px; position:relative}
+.bookbar{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:0 4px}
+.chapter .kicker{margin:0; color:var(--soft); font-size:1rem}
+.chapter h2{margin:0; font-size:1.5rem; line-height:1.15}
+.ghost{display:inline-flex; align-items:center; gap:8px; font:700 .95rem var(--body); padding:8px 14px; border-radius:12px; border:1.5px solid var(--ink); background:var(--paper); cursor:pointer; box-shadow:0 4px 12px rgba(42,36,56,.12)}
 .ghost[aria-pressed=true]{background:var(--dusk); color:var(--paper); border-color:var(--dusk)}
-.stage{display:flex; align-items:flex-start; justify-content:center; gap:14px}
+.stage{position:relative; display:flex; align-items:flex-start; justify-content:center; gap:18px; padding:26px 0 6px}
 .turn{flex:none; align-self:center; width:46px; height:46px; border-radius:50%; border:1.5px solid var(--ink); background:var(--paper);
-  font:800 1.5rem/1 var(--body); cursor:pointer; box-shadow:var(--shadow); margin-bottom:60px}
+  font:800 1.5rem/1 var(--body); cursor:pointer; box-shadow:var(--shadow); margin-bottom:70px; z-index:2}
 .turn:disabled{opacity:.3; cursor:default}
-.spread{display:flex; justify-content:center; align-items:flex-start; touch-action:pan-y}
+.spread{position:relative; display:flex; justify-content:center; align-items:flex-start; touch-action:pan-y; z-index:1}
 .page{width:var(--pw)}
-.page[hidden]{display:none}
+.wrap{position:relative}
 
-.frame{aspect-ratio:2/3; position:relative; overflow:hidden; background:var(--paper); border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); container-type:inline-size}
-.page.left .frame{border-radius:16px 0 0 16px; border-right-width:.75px}
-.page.right .frame{border-radius:0 16px 16px 0; border-left-width:.75px}
-.page.left .frame::before,.page.right .frame::before{content:""; position:absolute; top:0; bottom:0; width:12%; z-index:3; pointer-events:none}
-.page.left .frame::before{right:0; background:linear-gradient(to left, rgba(42,36,56,.28), transparent)}
-.page.right .frame::before{left:0; background:linear-gradient(to right, rgba(42,36,56,.28), transparent)}
+.frame{aspect-ratio:2/3; position:relative; overflow:hidden; background-color:var(--paper); background-image:var(--grain);
+  border:1.5px solid var(--ink); border-radius:16px; box-shadow:var(--shadow); container-type:inline-size}
+/* an open book: gutter shading and stacked page edges on the outside */
+.page.left .frame{border-radius:16px 0 0 16px; border-right-width:.75px;
+  box-shadow:-3px 3px 0 -1px var(--paper), -4px 3px 0 -1px var(--shade), -6px 6px 0 -1px var(--paper), -7px 6px 0 -1px var(--shade), var(--shadow)}
+.page.right .frame{border-radius:0 16px 16px 0; border-left-width:.75px;
+  box-shadow:3px 3px 0 -1px var(--paper), 4px 3px 0 -1px var(--shade), 6px 6px 0 -1px var(--paper), 7px 6px 0 -1px var(--shade), var(--shadow)}
+.page.left .frame::before,.page.right .frame::before{content:""; position:absolute; top:0; bottom:0; width:14%; z-index:3; pointer-events:none}
+.page.left .frame::before{right:0; background:linear-gradient(to left, rgba(42,36,56,.32), rgba(42,36,56,.06) 40%, transparent)}
+.page.right .frame::before{left:0; background:linear-gradient(to right, rgba(42,36,56,.32), rgba(42,36,56,.06) 40%, transparent)}
 /* hardcover: spine strip plus stacked page edges */
 .page.cover .frame{border-radius:6px 14px 14px 6px;
   box-shadow:2px 2px 0 var(--paper), 3px 3px 0 var(--shade), 5px 5px 0 var(--paper), 6px 6px 0 var(--shade), 8px 8px 0 var(--paper), 9px 9px 0 var(--shade), var(--shadow)}
 .page.cover .frame::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4.5%; z-index:3; pointer-events:none;
   background:linear-gradient(to right, rgba(42,36,56,.45), rgba(255,255,255,.18) 55%, rgba(42,36,56,.2))}
 
+/* ribbon bookmark down the gutter, and a vine curling over the book's corner */
+.bookmark{display:none; position:absolute; z-index:5; left:-7px; top:-10px; width:14px; height:calc(100% + 46px); pointer-events:none;
+  background:linear-gradient(90deg,#2A2F5C,var(--dusk) 40%,#4A509A 60%,#2A2F5C); clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 12px),0 100%);
+  filter:drop-shadow(0 2px 2px rgba(42,36,56,.3))}
+.page.right .bookmark{display:block}
+.curl{display:none; position:absolute; z-index:6; right:-34px; top:-40px; width:110px; height:96px; pointer-events:none}
+.page.cover .curl,.page.right .curl{display:block}
+.curl path{fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round}
+.curl .lf{fill:var(--green); stroke:none} .curl .lf2{fill:#3F9A5E; stroke:none}
+
 .frame > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none}
 [data-state=done] .frame > img{display:block}
 .sketch{position:absolute; inset:0; width:100%; height:100%}
-[data-state=done] .sketch{display:none}
-.sketch path{fill:none; stroke:var(--pencil); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round}
-[data-state=loading] .sketch path{stroke-dasharray:600; stroke-dashoffset:600; animation:ink 1.6s ease-in-out infinite}
+[data-state=done] .sketch,[data-state=done] .note{display:none}
+.sketch path{fill:none; stroke:var(--pencil); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
+.sketch .faint{stroke-width:1.2; stroke-dasharray:3 5; opacity:.6}
+[data-state=loading] .sketch path:not(.faint){stroke-dasharray:600; stroke-dashoffset:600; animation:ink 1.6s ease-in-out infinite}
 [data-state=loading] .sketch path:nth-child(2){animation-delay:.25s}
 [data-state=loading] .sketch path:nth-child(3){animation-delay:.5s}
 @keyframes ink{0%{stroke-dashoffset:600}60%,100%{stroke-dashoffset:0}}
+/* pencil marginalia on pages not drawn yet */
+.note{position:absolute; z-index:1; left:9%; right:9%; text-align:center; color:var(--pencil); font:italic 500 5.4cqw/1.2 var(--display); font-variation-settings:"SOFT" 100,"WONK" 1}
+.note.at-top{top:9%} .note.at-bottom{bottom:9%}
 /* the art arrives as a soft color wash fading into the picture */
 .fresh .frame > img{animation:reveal 1.1s ease-out}
 .fresh .frame::after{content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -113,78 +183,91 @@ button{font-family:inherit; color:inherit}
 .story.bottom{bottom:6.2%} .story.top{top:6.2%}
 .story.dark{background:rgba(52,57,107,.88); color:var(--paper)}
 .story.cover-title{left:0; right:0; border-radius:0; padding:5cqw 4cqw; background:rgba(52,57,107,.92); color:var(--paper);
-  font:800 8.8cqw/1.08 var(--display); font-variation-settings:"SOFT" 100,"WONK" 1}
+  font:800 8.8cqw/1.08 var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; border-top:1.2cqw double var(--gold); border-bottom:1.2cqw double var(--gold)}
 .story.cover-title i{display:block; margin-top:2cqw; font:italic 600 4.9cqw var(--display)}
-.page.dusk .controls .redraw{border-color:var(--dusk)}
+[data-state=idle] .story:not(.cover-title),[data-state=loading] .story:not(.cover-title),[data-state=error] .story:not(.cover-title){opacity:.55}
+.folio{margin:10px 0 0; text-align:center; color:var(--soft); font-size:.95rem; letter-spacing:.04em}
 
 /* About Me (built from the form, mirrors the PDF's last page) */
-.about .frame{display:flex; flex-direction:column; align-items:center; text-align:center; padding:10cqw 8cqw; font-family:var(--story)}
-.about h3{margin:0 0 5cqw; font:700 7.9cqw var(--story)}
-.about .portrait{width:46cqw; aspect-ratio:2/3; border-radius:3cqw; background:var(--shade) center/auto 100% no-repeat; border:1px solid rgba(42,36,56,.2)}
-.about .portrait.has{background-size:auto 100%; background-position:22% center}
+.about .frame{display:flex; flex-direction:column; align-items:center; text-align:center; padding:9cqw 8cqw; font-family:var(--story)}
+.about h3{margin:0 0 1cqw; font:700 7.9cqw var(--story)}
+.about .orn{color:var(--gold); font-size:5cqw; margin-bottom:3cqw}
+.about .portrait{width:46cqw; aspect-ratio:2/3; border-radius:3cqw; background:var(--shade) center/auto 100% no-repeat; border:1px solid rgba(42,36,56,.2);
+  display:grid; place-items:center; color:var(--pencil); font:italic 500 4cqw var(--display)}
+.about .portrait.has{background-position:22% center; color:transparent}
 .about .name{margin:5cqw 0 1cqw; font:700 6cqw var(--story)}
 .about .age{margin:0 0 3cqw; font-size:4cqw}
 .about .fav-label{margin:0; font-style:italic; color:var(--soft); font-size:3.5cqw}
 .about .fav{margin:1cqw 0 0; font-size:3.5cqw}
 
-.controls{display:flex; flex-direction:column; gap:7px; margin-top:12px; padding:0 2px}
-.small{font:700 .92rem var(--body); padding:7px 12px; border-radius:12px; border:1.5px solid var(--ink); background:var(--gold); cursor:pointer; align-self:flex-start}
+.controls{display:flex; flex-direction:column; gap:7px; margin-top:8px; padding:0 2px}
+.small{display:inline-flex; align-items:center; gap:6px; font:700 .92rem var(--body); padding:7px 12px; border-radius:12px; border:1.5px solid var(--ink); background:var(--gold); cursor:pointer; align-self:flex-start}
 .small:disabled{opacity:.5; cursor:not-allowed}
 .small.plain{background:var(--paper); align-self:auto}
 .change{display:flex; gap:6px}
 .change input{flex:1; min-width:0; font:inherit; font-size:.9rem; padding:6px 10px; border:1.5px solid var(--ink); border-radius:12px; background:#fff}
 [data-state=idle] .change,[data-state=loading] .change{display:none}
 
+/* desk props (decoration only) */
+.prop{position:absolute; pointer-events:none; z-index:0}
+.prop.pencil{left:2%; bottom:96px; width:170px; transform:rotate(-14deg)}
+.prop.beans{right:3%; bottom:110px; width:96px}
+
 /* ---------- the vine ribbon ---------- */
-.ribbon{position:relative; padding:18px 8px 6px; margin-top:4px}
-.ribbon .vine{position:absolute; left:0; right:0; top:40px; width:100%; height:44px; overflow:visible}
-.ribbon .vine path{fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round; vector-effect:non-scaling-stroke; opacity:.85}
+.ribbon{position:relative; padding:18px 8px 6px}
+.ribbon .vine{position:absolute; left:0; right:0; top:42px; width:100%; height:44px; overflow:visible}
+.ribbon .vine path{fill:none; stroke:var(--green); stroke-width:3; stroke-linecap:round; vector-effect:non-scaling-stroke; opacity:.9}
+.ribbon .vine .tendril{stroke-width:1.6}
 .ribbon ol{position:relative; display:flex; justify-content:space-around; gap:8px; margin:0; padding:0; list-style:none}
-.node{position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0; padding:4px; cursor:pointer; font:700 .8rem var(--body)}
-.node .thumb{width:38px; height:57px; border-radius:6px; background:var(--paper); border:1.5px solid var(--ink); overflow:hidden; box-shadow:0 4px 10px rgba(42,36,56,.15)}
+.node{position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:0; padding:4px; cursor:pointer}
+.node .thumb{width:38px; height:57px; border-radius:5px; background:var(--paper); background-image:var(--grain); border:1.5px solid var(--ink); overflow:hidden;
+  box-shadow:2px 2px 0 var(--paper), 3px 3px 0 var(--shade), 0 4px 10px rgba(42,36,56,.15)}
 .node .thumb img{width:100%; height:100%; object-fit:cover; display:none}
 .node[data-state=done] .thumb img[src]{display:block}
 .node[aria-current=true] .thumb{outline:3px solid var(--gold); outline-offset:2px}
+.node .lbl{font:italic 600 .9rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1}
 .node .dot{width:8px; height:8px; border-radius:50%; background:var(--pencil)}
 .node[data-state=loading] .dot{background:var(--gold); animation:pulse 1s ease-in-out infinite}
 .node[data-state=done] .dot{background:var(--green)}
 .node[data-state=error] .dot{background:var(--bad)}
 @keyframes pulse{50%{transform:scale(1.6)}}
 .node .leaf{position:absolute; top:-6px; right:-12px; width:24px; height:20px; transform:scale(0) rotate(-30deg); transform-origin:0% 100%; transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
-li:nth-child(even) .node .leaf{right:auto; left:-12px; transform-origin:100% 100%}
 .node[data-state=done] .leaf{transform:scale(1) rotate(-12deg)}
+li:nth-child(even) .node .leaf{right:auto; left:-12px; transform-origin:100% 100%}
 li:nth-child(even) .node[data-state=done] .leaf{transform:scale(-1,1) rotate(-12deg)}
 .leaf path{fill:var(--green)} .leaf .vein{fill:none; stroke:#9fd2a9; stroke-width:1.2}
 
 /* ---------- reading mode ---------- */
-body.reading .rail, body.reading .controls{display:none}
+body.reading .rail, body.reading .controls, body.reading .prop{display:none}
 body.reading .app{grid-template-columns:1fr}
-body.reading{--pw:clamp(240px, calc((100vh - 230px) * .6667), 560px)}
+body.reading{--pw:clamp(240px, calc((100vh - 250px) * .6667), 560px)}
 
 /* ---------- phone: one page at a time, desk collapsible, ribbon pinned ---------- */
+@media (max-width:1100px){ .prop{display:none} }
 @media (max-width:900px){
   .app{grid-template-columns:1fr; padding:16px 16px 0; gap:16px}
-  .rail{position:static}
-  .brand h1{font-size:1.9rem}
+  .brand h1{font-size:2rem}
   .desk summary{cursor:pointer; margin-bottom:0}
-  .desk summary::after{content:" ▾"; font-size:.9rem}
-  .desk[open] summary{margin-bottom:12px}
-  .desk[open] summary::after{content:" ▴"}
-  :root{--pw:min(100%, 440px)}
-  .stage{gap:8px}
+  .desk summary::after{content:"\25BE"; margin-left:auto; font-size:1rem}
+  .desk[open] summary{margin-bottom:14px}
+  .desk[open] summary::after{content:"\25B4"}
+  :root{--pw:min(100%, 430px)}
+  .stage{gap:8px; padding-top:30px}
   .spread{flex:1; min-width:0}
   .turn{width:38px; height:38px; font-size:1.2rem}
-  .cast{display:grid; grid-template-columns:120px 1fr; column-gap:12px; align-items:center; padding:12px}
-  .cast .frame{grid-row:1 / 3; width:120px}
-  .cast h2{margin:0; align-self:end}
-  .cast p{margin:4px 0 0; align-self:start}
-  .ribbon{position:sticky; bottom:0; z-index:10; background:linear-gradient(to top, var(--desk) 75%, transparent); padding-bottom:10px}
+  .curl{right:-14px; top:-34px; width:86px; height:76px}
+  .cast{display:grid; grid-template-columns:130px 1fr; column-gap:14px; align-items:center; text-align:left; padding:12px}
+  .cast .portrait-frame{grid-row:1 / 4; padding:5px}
+  .cast h2{margin:0}
+  .cast .plaque{justify-self:start; margin:6px 0 0}
+  .cast .note-text{margin:6px 0 0}
+  .ribbon{position:sticky; bottom:0; z-index:10; background:linear-gradient(to top, var(--desk) 78%, transparent); padding-bottom:10px}
 }
 @media (prefers-reduced-motion:reduce){
   [data-state=loading] .sketch path{animation:none; stroke-dashoffset:0}
   .fresh .frame > img,.fresh .frame::after{animation:none} .fresh .frame::after{display:none}
-  .node .leaf{transition:none} .node[data-state=loading] .dot{animation:none}
-  .big.ready .bean,.big.ready::after{animation:none} .big.ready::after{display:none}
+  .node .leaf,.polaroid{transition:none} .node[data-state=loading] .dot{animation:none}
+  .big.ready .bean,.big.ready::after,.big.ready .sparkle{animation:none} .big.ready::after{display:none}
   .big{transition:none}
 }
 </style>
@@ -192,75 +275,139 @@ body.reading{--pw:clamp(240px, calc((100vh - 230px) * .6667), 560px)}
 <body>
 {% set sketch %}
 <svg class="sketch" viewBox="0 0 200 300" aria-hidden="true">
-  <path d="M100 260 C 96 200, 108 150, 98 90 C 92 60, 112 45, 118 27"/>
-  <path d="M98 180 C 70 177, 60 150, 56 126 C 78 123, 92 144, 98 180 Z"/>
-  <path d="M102 135 C 130 135, 142 108, 144 84 C 122 84, 106 102, 102 135 Z"/>
+  <path d="M100 250 C 96 195, 108 150, 98 95 C 92 66, 112 52, 118 36"/>
+  <path d="M98 178 C 70 175, 60 150, 56 128 C 78 125, 92 144, 98 178 Z"/>
+  <path d="M102 136 C 130 136, 142 110, 144 88 C 122 88, 106 104, 102 136 Z"/>
+  <path class="faint" d="M40 250 L160 250 M118 36 C 128 26, 136 32, 130 40 C 126 46, 120 42, 122 38"/>
+</svg>
+{% endset %}
+{% set leaf %}<svg class="leaf" viewBox="0 0 24 20" aria-hidden="true"><path d="M1 19 C 3 7, 12 1, 23 1 C 22 11, 14 19, 1 19 Z"/><path class="vein" d="M2 18 C 8 12, 14 7, 21 3"/></svg>{% endset %}
+{% set curl %}
+<svg class="curl" viewBox="0 0 110 96" aria-hidden="true">
+  <path d="M8 92 C 20 70, 40 62, 52 48 C 66 32, 60 14, 76 10 C 92 6, 100 20, 92 28 C 86 34, 78 28, 82 22"/>
+  <path class="lf" d="M44 58 C 30 50, 22 56, 18 66 C 30 70, 40 66, 44 58 Z"/>
+  <path class="lf2" d="M60 36 C 66 22, 80 22, 86 30 C 78 40, 68 40, 60 36 Z"/>
+  <path class="lf" d="M30 74 C 34 62, 46 60, 52 64 C 46 74, 38 78, 30 74 Z"/>
 </svg>
 {% endset %}
 <div class="app">
   <aside class="rail">
     <header class="brand">
+      <p class="kicker script">A picture book starring your child</p>
       <h1 class="display">Beanstalk Storybook</h1>
-      <p>A picture book starring your child, ready to download as a PDF.</p>
+      <svg class="flourish" viewBox="0 0 190 26" aria-hidden="true">
+        <path d="M2 14 C 30 2, 50 24, 80 13 S 130 2, 160 13 S 182 18, 188 10"/>
+        <path class="lf" d="M60 15 C 52 6, 42 7, 38 13 C 46 19, 54 19, 60 15 Z"/>
+        <path class="lf" d="M118 10 C 126 1, 138 3, 140 9 C 132 15, 124 15, 118 10 Z"/>
+      </svg>
     </header>
 
     <details class="card desk" id="deskbox" open>
-      <summary class="display">Make your book</summary>
+      <summary><span class="display">Make your book</span><span class="script">it takes about a minute</span></summary>
       <form id="desk" onsubmit="return false">
-        <label class="drop" id="drop">
+        <label class="polaroid" id="drop">
+          <span class="tape" aria-hidden="true"></span>
           <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" aria-label="Upload the child's photo">
-          <img id="preview" alt="The uploaded photo">
-          <span class="hint"><strong>Drop a photo here</strong><br>or click to choose one. A clear, front-facing face works best.</span>
+          <span class="photo">
+            <img id="preview" alt="The uploaded photo">
+            <span class="hint"><b>Drop a photo here</b><small>or tap to choose one.<br>A clear, front-facing face works best.</small></span>
+          </span>
+          <span class="caption script">the star of the story</span>
         </label>
-        <div class="field"><label for="name">Child's name</label><input id="name" maxlength="40" autocomplete="off"></div>
-        <div class="field"><label for="age">Age <small>(optional)</small></label><input id="age" inputmode="numeric" maxlength="3" autocomplete="off"></div>
-        <div class="field"><label for="favorites">Favorite things <small>(optional)</small></label><textarea id="favorites" maxlength="300" placeholder="Dinosaurs, pancakes, the color green"></textarea></div>
-        <button class="big" id="make" type="button">Make the book</button>
+
+        <div class="bookplate">
+          <p class="plate-top script">This book stars</p>
+          <input id="name" class="line-input plate-name" maxlength="40" autocomplete="off" placeholder="your child's name" aria-label="Child's name">
+          <label class="plate-age script">age <input id="age" class="line-input" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="Age (optional)"></label>
+        </div>
+
+        <label class="lined">
+          <span class="script">A few favorite things <small>(optional)</small></span>
+          <textarea id="favorites" maxlength="300" placeholder="Dinosaurs, pancakes, the color green"></textarea>
+        </label>
+
+        <button class="big" id="make" type="button">
+          <svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><path d="M9 19 V9" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 11 C 9 5, 4 3, 1 4 C 1 9, 5 11, 9 11 Z" fill="#CDEBD4"/><path d="M9 9 C 9 4, 13 1, 17 2 C 17 7, 13 9, 9 9 Z" fill="#fff"/></svg>
+          Make the book
+        </button>
         <button class="big alt" id="download" type="button" disabled>
           <svg class="bean" viewBox="0 0 18 14" aria-hidden="true"><ellipse cx="9" cy="7" rx="8" ry="5.5" fill="#FFF3C4" stroke="#2A2438" stroke-width="1.2"/><ellipse cx="6.5" cy="5.5" rx="2.2" ry="1.2" fill="#fff"/></svg>
           Download PDF
+          <svg class="sparkle" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 0 L8.4 5.6 L14 7 L8.4 8.4 L7 14 L5.6 8.4 L0 7 L5.6 5.6 Z" fill="#fff"/></svg>
         </button>
         <p id="status" role="status" aria-live="polite"></p>
       </form>
     </details>
 
-    <section class="card cast" id="ref" data-state="idle" aria-label="Your cast">
-      <h2 class="display">Your cast</h2>
-      <div class="frame" style="aspect-ratio:3/2">
-        <svg class="sketch" viewBox="0 0 150 100" aria-hidden="true">
-          <path d="M45 22 a12 12 0 1 0 0.1 0 Z M28 80 C 30 58, 60 58, 62 80"/>
-          <path d="M105 20 a13 13 0 1 0 0.1 0 Z M86 82 C 88 58, 122 58, 124 82"/>
-          <path d="M92 18 C 98 4, 114 4, 118 18"/>
-        </svg>
-        <img alt="Face reference: the child as Jack, next to his mother">
-        <div class="state" id="state-ref">Inking...</div>
+    <section class="card cast" id="ref" data-state="idle" aria-label="The cast">
+      <h2 class="display">The cast</h2>
+      <div class="portrait-frame">
+        <div class="frame" style="aspect-ratio:3/2">
+          <svg class="sketch" viewBox="0 0 150 100" aria-hidden="true">
+            <path d="M45 22 a12 12 0 1 0 0.1 0 Z M28 80 C 30 58, 60 58, 62 80"/>
+            <path d="M105 20 a13 13 0 1 0 0.1 0 Z M86 82 C 88 58, 122 58, 124 82"/>
+            <path d="M92 18 C 98 4, 114 4, 118 18"/>
+          </svg>
+          <img alt="Face reference: the child as Jack, next to his mother">
+          <div class="state" id="state-ref">Inking...</div>
+        </div>
       </div>
-      <p>Jack's and his mother's faces are drawn first from the photo, and every page reuses them.</p>
+      <p class="plaque script">Jack &amp; his mother</p>
+      <p class="note-text">Drawn first from the photo. Every page reuses their faces.</p>
     </section>
   </aside>
 
   <main class="book">
     <div class="bookbar">
-      <p id="where" class="display" aria-live="polite">Front cover</p>
-      <button class="ghost" id="reading" type="button" aria-pressed="false">Reading mode</button>
+      <div class="chapter" aria-live="polite">
+        <p class="kicker script" id="where-kicker">The front cover</p>
+        <h2 class="display" id="where">Jack and the Beanstalk</h2>
+      </div>
+      <button class="ghost" id="reading" type="button" aria-pressed="false">
+        <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M9 3 C 6 1, 3 1, 1 2 V13 C 3 12, 6 12, 9 13 C 12 12, 15 12, 17 13 V2 C 15 1, 12 1, 9 3 Z M9 3 V13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>Reading mode</span>
+      </button>
     </div>
 
     <div class="stage">
+      <svg class="prop pencil" viewBox="0 0 170 22" aria-hidden="true">
+        <rect x="22" y="3" width="120" height="16" rx="2" fill="#F2B544" stroke="#2A2438" stroke-width="1.5"/>
+        <path d="M22 8 H142 M22 14 H142" stroke="#D99A2B" stroke-width="1.2"/>
+        <rect x="142" y="3" width="10" height="16" fill="#9AA3C7" stroke="#2A2438" stroke-width="1.5"/>
+        <rect x="152" y="3" width="15" height="16" rx="4" fill="#E79A9A" stroke="#2A2438" stroke-width="1.5"/>
+        <path d="M22 3 L3 11 L22 19 Z" fill="#EBCB9B" stroke="#2A2438" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M9 8.4 L3 11 L9 13.6 Z" fill="#2A2438"/>
+      </svg>
+      <svg class="prop beans" viewBox="0 0 96 56" aria-hidden="true">
+        <g stroke="#2A2438" stroke-width="1.3">
+          <ellipse cx="22" cy="34" rx="13" ry="9" fill="#D9584C" transform="rotate(-20 22 34)"/>
+          <ellipse cx="52" cy="22" rx="12" ry="8.5" fill="#4C9A5E" transform="rotate(15 52 22)"/>
+          <ellipse cx="74" cy="42" rx="12" ry="8.5" fill="#7A5BA6" transform="rotate(-8 74 42)"/>
+        </g>
+        <g fill="#fff" opacity=".7"><ellipse cx="18" cy="30" rx="4" ry="2"/><ellipse cx="48" cy="19" rx="4" ry="2"/><ellipse cx="70" cy="39" rx="4" ry="2"/></g>
+      </svg>
+
       <button class="turn" id="prev" type="button" aria-label="Previous pages">&#8249;</button>
       <div class="spread" id="spread">
         {% for p in [cover] + pages %}
         {% set label = "Front cover" if p.id == "cover" else "Page " ~ loop.index0 %}
-        <article class="page{{ ' cover' if p.id == 'cover' }}{{ ' dusk' if p.tone == 'dark' }}" id="page-{{p.id}}" data-id="{{p.id}}" data-label="{{ label }}" data-state="idle">
-          <div class="frame">
-            {{ sketch }}
-            <img alt="{{ label }} illustration">
-            {% if p.id == "cover" %}
-            <div class="story top cover-title">Jack and the Beanstalk<i id="cover-name">starring your child</i></div>
-            {% else %}
-            <div class="story {{p.text_zone}} {{p.tone}}">{{ p.text }}</div>
-            {% endif %}
-            <div class="state" id="state-{{p.id}}">Inking...</div>
+        <article class="page{{ ' cover' if p.id == 'cover' }}{{ ' dusk' if p.tone == 'dark' }}" id="page-{{p.id}}" data-id="{{p.id}}" data-label="{{ label }}" data-title="{{ 'Jack and the Beanstalk' if p.id == 'cover' else p.title }}" data-folio="{{ '' if p.id == 'cover' else loop.index0 }}" data-state="idle">
+          <div class="wrap">
+            <span class="bookmark" aria-hidden="true"></span>
+            {{ curl }}
+            <div class="frame">
+              {{ sketch }}
+              <p class="note {{ 'at-bottom' if p.text_zone == 'top' else 'at-top' }}" aria-hidden="true">{{ "your cover goes here" if p.id == "cover" else p.title|lower }}</p>
+              <img alt="{{ label }} illustration">
+              {% if p.id == "cover" %}
+              <div class="story top cover-title">Jack and the Beanstalk<i id="cover-name">starring your child</i></div>
+              {% else %}
+              <div class="story {{p.text_zone}} {{p.tone}}">{{ p.text }}</div>
+              {% endif %}
+              <div class="state" id="state-{{p.id}}">Inking...</div>
+            </div>
           </div>
+          {% if p.id != "cover" %}<p class="folio script">{{ loop.index0 }}</p>{% endif %}
           <div class="controls">
             <button class="small redraw" type="button" data-redraw="{{p.id}}" disabled>Draw {{ label|lower }}</button>
             <div class="change">
@@ -270,15 +417,21 @@ body.reading{--pw:clamp(240px, calc((100vh - 230px) * .6667), 560px)}
           </div>
         </article>
         {% endfor %}
-        <article class="page about" id="page-about" data-id="about" data-label="About Me" data-state="idle">
-          <div class="frame">
-            <h3>About Me</h3>
-            <div class="portrait" id="about-portrait" role="img" aria-label="Jack's face from the cast drawing"></div>
-            <p class="name" id="about-name">Your child's name</p>
-            <p class="age" id="about-age"></p>
-            <p class="fav-label" id="about-fav-label" hidden>My favorite things</p>
-            <p class="fav" id="about-fav"></p>
+        <article class="page about" id="page-about" data-id="about" data-label="About Me" data-title="About Me" data-folio="{{ pages|length + 1 }}" data-state="idle">
+          <div class="wrap">
+            <span class="bookmark" aria-hidden="true"></span>
+            {{ curl }}
+            <div class="frame">
+              <h3>About Me</h3>
+              <div class="orn" aria-hidden="true">&#10086;</div>
+              <div class="portrait" id="about-portrait" role="img" aria-label="Jack's face from the cast drawing">your Jack</div>
+              <p class="name" id="about-name">Your child's name</p>
+              <p class="age" id="about-age"></p>
+              <p class="fav-label" id="about-fav-label" hidden>My favorite things</p>
+              <p class="fav" id="about-fav"></p>
+            </div>
           </div>
+          <p class="folio script">{{ pages|length + 1 }}</p>
         </article>
       </div>
       <button class="turn" id="next" type="button" aria-label="Next pages">&#8250;</button>
@@ -287,20 +440,24 @@ body.reading{--pw:clamp(240px, calc((100vh - 230px) * .6667), 560px)}
     <nav class="ribbon" aria-label="Pages">
       <svg class="vine" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0 22 C 80 2, 170 42, 250 22 S 420 2, 500 22 S 670 42, 750 22 S 920 2, 1000 22"/>
+        <path class="tendril" d="M125 22 C 120 6, 140 4, 138 14 C 136 20, 128 16, 131 12"/>
+        <path class="tendril" d="M375 22 C 380 38, 360 40, 362 30 C 364 24, 372 28, 369 32"/>
+        <path class="tendril" d="M625 22 C 620 6, 640 4, 638 14 C 636 20, 628 16, 631 12"/>
+        <path class="tendril" d="M875 22 C 880 38, 860 40, 862 30 C 864 24, 872 28, 869 32"/>
       </svg>
       <ol>
         {% for p in [cover] + pages %}
         <li><button class="node" type="button" data-go="{{p.id}}" data-state="idle" aria-label="Go to {{ 'the front cover' if p.id == 'cover' else 'page ' ~ loop.index0 }}">
-          <svg class="leaf" viewBox="0 0 24 20" aria-hidden="true"><path d="M1 19 C 3 7, 12 1, 23 1 C 22 11, 14 19, 1 19 Z"/><path class="vein" d="M2 18 C 8 12, 14 7, 21 3"/></svg>
+          {{ leaf }}
           <span class="thumb"><img alt=""></span>
-          <span>{{ "Cover" if p.id == "cover" else loop.index0 }}</span>
+          <span class="lbl">{{ "Cover" if p.id == "cover" else loop.index0 }}</span>
           <span class="dot"></span>
         </button></li>
         {% endfor %}
         <li><button class="node" type="button" data-go="about" data-state="idle" aria-label="Go to About Me">
-          <svg class="leaf" viewBox="0 0 24 20" aria-hidden="true"><path d="M1 19 C 3 7, 12 1, 23 1 C 22 11, 14 19, 1 19 Z"/><path class="vein" d="M2 18 C 8 12, 14 7, 21 3"/></svg>
+          {{ leaf }}
           <span class="thumb"><img alt=""></span>
-          <span>About</span>
+          <span class="lbl">About me</span>
           <span class="dot"></span>
         </button></li>
       </ol>
@@ -313,6 +470,8 @@ const $ = id => document.getElementById(id);
 const SHEETS = [...document.querySelectorAll("#spread .page")].map(el => el.dataset.id);  // cover, pages, about
 const DRAWN = SHEETS.filter(id => id !== "about");  // the sheets that get generated art
 const LABEL = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.label]));
+const TITLE = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.title]));
+const FOLIO = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.folio]));
 const drop = $("drop"), photo = $("photo"), make = $("make"), download = $("download"), status = $("status");
 const book = { ref: null, pages: {} };
 const busy = new Set();
@@ -355,7 +514,10 @@ function render() {
   document.querySelectorAll(".node").forEach(n => n.setAttribute("aria-current", visible.includes(n.dataset.go)));
   $("prev").disabled = i === 0;
   $("next").disabled = i === sp.length - 1;
-  $("where").textContent = visible.map(id => LABEL[id]).join(" and ");
+  const folios = visible.map(id => FOLIO[id]).filter(Boolean);
+  $("where-kicker").textContent = visible[0] === "cover" ? "The front cover"
+    : folios.length > 1 ? `Pages ${folios[0]} and ${folios[1]}` : `Page ${folios[0]}`;
+  $("where").textContent = visible.map(id => TITLE[id]).join(" and ");
 }
 $("prev").onclick = () => turn(-1);
 $("next").onclick = () => turn(1);
@@ -377,7 +539,7 @@ $("deskbox").addEventListener("toggle", () => { if (!narrow.matches) $("deskbox"
 $("reading").onclick = () => {
   const on = document.body.classList.toggle("reading");
   $("reading").setAttribute("aria-pressed", on);
-  $("reading").textContent = on ? "Exit reading mode" : "Reading mode";
+  $("reading").querySelector("span").textContent = on ? "Exit reading mode" : "Reading mode";
 };
 
 // ---------- state ----------
@@ -472,7 +634,7 @@ const drawPage = id => task(id, async () => post("/page", { page: id, reference:
 make.onclick = async () => {
   const file = photo.files[0];
   if (!file) { say("Choose a photo first.", true); photo.focus(); return; }
-  if (!$("name").value.trim()) { say("Type the child's name first.", true); $("name").focus(); return; }
+  if (!$("name").value.trim()) { say("Write the child's name on the bookplate first.", true); $("name").focus(); return; }
   book.pages = {};
   DRAWN.forEach(id => { setState(id, "idle"); node(id).querySelector(".thumb img").removeAttribute("src"); });
   show("cover");
@@ -480,7 +642,7 @@ make.onclick = async () => {
   say("Drawing the cast first. This takes about a minute.");
   try {
     await task("ref", async () => post("/reference", { photo: await shrink(file) }));
-  } catch (e) { say(`Your cast: ${e.message}`, true); return; }
+  } catch (e) { say(`The cast: ${e.message}`, true); return; }
   say("Drawing the cover and all three pages. This takes about a minute.");
   // One request per page, sent together. Each request makes exactly one API call; no retries.
   const results = await Promise.allSettled(DRAWN.map(drawPage));
@@ -510,7 +672,7 @@ document.querySelectorAll("[data-change]").forEach(b => b.onclick = async () => 
 
 download.onclick = async () => {
   const name = $("name").value.trim();
-  if (!name) { say("Type the child's name for the About Me page.", true); $("name").focus(); return; }
+  if (!name) { say("Write the child's name on the bookplate for the About Me page.", true); $("name").focus(); return; }
   download.disabled = true; say("Binding the book...");
   try {
     const pages = {};
