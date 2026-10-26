@@ -375,7 +375,7 @@ def draw_cover(c, img, name):
     c.setFillAlpha(0.92)
     c.rect(0, y0, PAGE_W, box_h, stroke=0, fill=1)
     c.restoreState()
-    c.setFillColorRGB(*PAPER)
+    c.setFillColorRGB(*hex_rgb("#F2C96A"))  # gold foil, matching the web cover
     y = y0 + box_h - 24 - 30
     c.setFont("Andika-Bold", 38)
     for line in title_lines:
