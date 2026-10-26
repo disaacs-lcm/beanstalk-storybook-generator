@@ -25,9 +25,9 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0; min-height:100vh; color:var(--ink); font:400 1rem/1.5 var(--body); background-color:var(--desk);
   background-image:
     radial-gradient(ellipse 60% 55% at 62% 18%, rgba(255,246,222,.8), rgba(255,246,222,0) 70%),
-    radial-gradient(ellipse at 50% 40%, rgba(200,178,138,0) 40%, rgba(170,146,104,.42) 100%),
+    radial-gradient(ellipse at 50% 40%, rgba(200,178,138,0) 35%, rgba(150,122,80,.55) 100%),
     var(--t-parchment);
-  background-size:auto, auto, 768px 768px; background-attachment:fixed}
+  background-size:auto, auto, 1024px 1024px; background-attachment:fixed}
 .display{font-family:var(--display); font-weight:800; font-variation-settings:"SOFT" 100, "WONK" 1}
 .script{font-family:var(--display); font-style:italic; font-weight:500; font-variation-settings:"SOFT" 100, "WONK" 1}
 button{font-family:inherit; color:inherit}
@@ -268,6 +268,56 @@ li:nth-child(even) .node[data-state=done] .leaf{transform:scale(-1,1) rotate(-12
 .brand h1,.chapter h2,.card h2,.desk summary .display{text-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(42,36,56,.12)}
 .plate-name{text-shadow:0 1px 0 rgba(255,255,255,.8)}
 
+/* ---------- buttons as objects, not form controls ---------- */
+/* Make the book: green book cloth over a raised block, stitched, label engraved */
+.big{border:0; border-radius:10px; padding:13px 16px 12px; margin-bottom:9px;
+  background-color:var(--green); background-image:var(--t-linen), var(--t-paper); background-size:256px, 384px; background-blend-mode:multiply;
+  outline:1.5px dashed rgba(255,255,255,.62); outline-offset:-6px; text-shadow:0 -1px 0 rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.12);
+  box-shadow:0 0 0 1.5px var(--ink), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -3px 0 rgba(0,0,0,.22),
+    0 6px 0 -1px #1F5534, 0 7.5px 0 -1px var(--ink), 0 14px 20px rgba(42,36,56,.28)}
+.big:hover{transform:translateY(-1px)}
+.big:active{transform:translateY(5px); box-shadow:0 0 0 1.5px var(--ink), inset 0 3px 5px rgba(0,0,0,.28), 0 1px 0 -1px #1F5534, 0 2.5px 0 -1px var(--ink), 0 4px 8px rgba(42,36,56,.2)}
+/* Download PDF: a brass plate */
+.big.alt{color:var(--ink); background-color:#fff; text-shadow:0 1px 0 rgba(255,255,255,.55);
+  background-image:var(--t-brushed), linear-gradient(176deg,#FFF4CF 0%,#F7D987 30%,#EBC062 52%,#F3CF79 70%,#FFEDB8 100%); background-size:256px, auto;
+  outline-color:rgba(42,36,56,.42);
+  box-shadow:0 0 0 1.5px var(--ink), inset 0 2px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(0,0,0,.18),
+    0 6px 0 -1px #9C7426, 0 7.5px 0 -1px var(--ink), 0 14px 20px rgba(42,36,56,.28)}
+.big:disabled,.big.alt:disabled{opacity:.55; filter:saturate(.55); transform:none;
+  box-shadow:0 0 0 1.5px var(--ink), 0 4px 0 -1px rgba(42,36,56,.45), 0 6px 12px rgba(42,36,56,.15)}
+.big:focus-visible{outline:2.5px solid var(--gold); outline-offset:3px}
+/* Redraw: a kraft paper tag with a brass eyelet */
+.small:not(.plain){position:relative; border:1.5px solid var(--ink); border-radius:4px 12px 12px 4px; padding:6px 14px 6px 29px;
+  background-color:#E2C793; background-image:var(--t-paper); background-size:384px; background-blend-mode:multiply;
+  font:italic 600 .98rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1;
+  box-shadow:0 3px 6px rgba(42,36,56,.2), inset 0 1px 0 rgba(255,255,255,.45); transform:rotate(-1.2deg); transition:transform .15s}
+.small:not(.plain)::before{content:""; position:absolute; left:9px; top:50%; width:9px; height:9px; margin-top:-4.5px; border-radius:50%;
+  background:var(--desk); box-shadow:inset 0 1px 2px rgba(42,36,56,.55), 0 0 0 2px #C9A85E, 0 0 0 3px var(--ink)}
+.small:not(.plain):hover{transform:rotate(0)}
+.small:not(.plain):active{transform:translateY(1px)}
+/* Apply: an inked rubber stamp */
+.small.plain{background:transparent; border:2px solid var(--dusk); color:var(--dusk); border-radius:8px; padding:5px 11px;
+  font:800 .92rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; transform:rotate(1.5deg);
+  box-shadow:inset 0 0 0 2px rgba(52,57,107,.14); transition:transform .12s, background-color .12s}
+.small.plain:hover{background-color:rgba(52,57,107,.07)}
+.small.plain:active{transform:rotate(1.5deg) scale(.94)}
+/* the change box: a sticky note */
+.change input{border:0; border-radius:2px 2px 12px 2px; background-color:#FFF0AE; background-image:var(--t-paper); background-size:384px; background-blend-mode:multiply;
+  font:italic 500 .95rem var(--display); font-variation-settings:"SOFT" 100,"WONK" 1; box-shadow:0 3px 6px rgba(42,36,56,.18), inset 0 -10px 12px -10px rgba(140,110,20,.25)}
+/* Reading mode: a cloth bookmark flag */
+.ghost{flex:none; white-space:nowrap; border:0; border-radius:0; padding:9px 28px 9px 14px; color:var(--paper); box-shadow:inset 0 2px 0 rgba(255,255,255,.15), inset 0 -2px 0 rgba(0,0,0,.25);
+  background-color:var(--dusk); background-image:var(--t-grosgrain), var(--t-linen); background-size:96px, 256px; background-blend-mode:multiply;
+  clip-path:polygon(0 0,100% 0,calc(100% - 12px) 50%,100% 100%,0 100%)}
+.ghost[aria-pressed=true]{background-color:#23284F; color:var(--gold)}
+.ghost:focus-visible{outline-offset:4px}
+/* page arrows: round brass buttons */
+.turn{color:var(--ink); text-shadow:0 1px 0 rgba(255,255,255,.6); border:1.5px solid var(--ink);
+  background-color:#fff; background-image:var(--t-brushed), radial-gradient(circle at 35% 30%, #FFF4D2, #F0C766 45%, #B98A30 100%);
+  background-size:256px, auto; background-blend-mode:multiply;
+  box-shadow:inset 0 0 0 3px rgba(255,236,170,.45), inset 0 -2px 3px rgba(0,0,0,.25), 0 4px 0 -1px #8C6420, 0 5.5px 0 -1px var(--ink), 0 10px 16px rgba(42,36,56,.25)}
+.turn:active:not(:disabled){transform:translateY(3px); box-shadow:inset 0 0 0 3px rgba(255,236,170,.45), inset 0 2px 4px rgba(0,0,0,.3), 0 1px 0 -1px #8C6420, 0 2px 0 -1px var(--ink)}
+.turn:disabled{opacity:.35}
+
 /* ---------- reading mode ---------- */
 body.reading .rail, body.reading .controls, body.reading .prop{display:none}
 body.reading .app{grid-template-columns:1fr}
@@ -295,6 +345,7 @@ body.reading{--pw:clamp(240px, calc((100vh - 250px) * .6667), 560px)}
   .ribbon{position:sticky; bottom:0; z-index:10; background:linear-gradient(to top, var(--desk) 78%, transparent); padding-bottom:10px}
 }
 @media (prefers-reduced-motion:reduce){
+  .small,.small.plain{transition:none}
   [data-state=loading] .sketch path{animation:none; stroke-dashoffset:0}
   .fresh .frame > img,.fresh .frame::after{animation:none} .fresh .frame::after{display:none}
   .node .leaf,.polaroid{transition:none} .node[data-state=loading] .dot{animation:none}

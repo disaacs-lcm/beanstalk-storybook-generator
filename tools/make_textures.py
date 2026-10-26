@@ -48,16 +48,22 @@ n = 384
 h = 0.55 * noise(n, 1.1) + 0.45 * noise(n, 3.5)
 save_gray("paper.png", 0.9 + 0.1 * emboss(h, 0.9) * speckles(n, 0.004, 0.25))
 
-# Parchment desk (colored): soft mottling, faint horizontal fibers, a few flecks, and a little tooth.
-n = 768
-mottle = 0.6 * noise(n, 60) + 0.4 * noise(n, 16)
-fibers = noise(n, 14, 0.9)
-fibers = np.clip((fibers - 0.62) * 4, 0, 1)
-tooth = emboss(noise(n, 1.4), 0.5)
-shade = (1 - 0.13 * mottle - 0.05 * fibers) * (0.95 + 0.05 * tooth) * speckles(n, 0.0012, 0.25)
-base = np.array([0xF3, 0xE9, 0xD2]) / 255
-rgb = np.clip(shade[..., None] * base, 0, 1)
-Image.fromarray((rgb * 255).astype(np.uint8), "RGB").save(os.path.join(OUT, "parchment.jpg"), quality=86, optimize=True)
+# Parchment desk (colored): two-tone mottling, age stains, foxing spots, fibers, and tooth. Large tile so it doesn't visibly repeat.
+n = 1024
+mottle = 0.5 * noise(n, 90) + 0.3 * noise(n, 28) + 0.2 * noise(n, 8)
+stains = np.clip((noise(n, 70) - 0.6) * 3.2, 0, 1) ** 1.5           # broad darker tide marks
+fibers = np.clip((noise(n, 18, 0.9) - 0.6) * 3.5, 0, 1)             # long horizontal fibers
+fibers2 = np.clip((noise(n, 0.9, 12) - 0.64) * 3.5, 0, 1)           # a few crossing ones
+fox = np.clip((noise(n, 2.2) - 0.83) * 9, 0, 1) * np.clip((noise(n, 50) - 0.45) * 3, 0, 1)  # small age spots, in clusters
+tooth = emboss(0.6 * noise(n, 1.3) + 0.4 * noise(n, 4), 0.9)
+t = np.clip(0.38 * mottle + 0.38 * stains + 0.12 * fibers + 0.06 * fibers2 + 0.5 * fox, 0, 1)
+light = np.array([0xF8, 0xF0, 0xDC]) / 255
+dark = np.array([0xD6, 0xBF, 0x93]) / 255
+foxc = np.array([0xB8, 0x8F, 0x5E]) / 255
+rgb = light + (dark - light) * t[..., None]
+rgb = rgb + (foxc - rgb) * (0.55 * fox)[..., None]
+rgb = rgb * (0.9 + 0.1 * tooth)[..., None] * speckles(n, 0.0008, 0.3)[..., None]
+Image.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8), "RGB").save(os.path.join(OUT, "parchment.jpg"), quality=88, optimize=True)
 
 # Linen book cloth for the hardcover: an over-under weave with uneven threads.
 n, p = 256, 4
