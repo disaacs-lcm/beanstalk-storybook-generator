@@ -174,7 +174,7 @@ def edit_prompt(change):
 
 
 # Per-visitor limit on images (a book is 5: the reference, the cover, and 3 pages). In memory, so it resets on restart.
-RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "15"))
+RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "100"))
 _hits = defaultdict(deque)
 _hits_lock = threading.Lock()
 
