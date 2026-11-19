@@ -318,6 +318,40 @@ li:nth-child(even) .node[data-state=done] .leaf{transform:scale(-1,1) rotate(-12
 .turn:active:not(:disabled){transform:translateY(3px); box-shadow:inset 0 0 0 3px rgba(255,236,170,.45), inset 0 2px 4px rgba(0,0,0,.3), 0 1px 0 -1px #8C6420, 0 2px 0 -1px var(--ink)}
 .turn:disabled{opacity:.35}
 
+/* ---------- account: a library-card chip, and the sign-in card ---------- */
+.account{display:flex; align-items:center; gap:10px; margin:0 0 14px; padding:8px 10px; border:1.5px dashed rgba(42,36,56,.45); border-radius:10px; background:rgba(255,251,241,.6)}
+.account img,.account .initial{width:30px; height:30px; border-radius:50%; border:1.5px solid var(--ink); flex:none; object-fit:cover}
+.account .initial{display:grid; place-items:center; background:var(--gold); font:800 .9rem var(--body)}
+.account .who{flex:1; min-width:0; line-height:1.2}
+.account .who b{display:block; font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.account .who small{color:var(--soft); font-size:.8rem}
+.account form{margin:0}
+.linkish{border:0; background:none; padding:4px; color:var(--dusk); font:700 .85rem var(--body); text-decoration:underline; cursor:pointer}
+.signin p{margin:0 0 14px; color:var(--soft)}
+.signin h2{margin:0 0 6px}
+.gbtn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--ink);
+  background:#fff; color:var(--ink); font:800 1rem var(--body); text-decoration:none; box-shadow:0 4px 0 -1px var(--ink), 0 8px 14px rgba(42,36,56,.18)}
+.gbtn:active{transform:translateY(3px); box-shadow:0 1px 0 -1px var(--ink)}
+.gbtn + .gbtn{margin-top:12px}
+.signin .err{color:var(--bad); font-weight:700}
+
+/* ---------- progress: one growing vine per picture ---------- */
+.progress{margin:4px 0 12px; padding:10px 12px 8px; border:1.5px solid var(--ink); border-radius:12px; background:var(--paper)}
+.progress[hidden]{display:none}
+.progress .sum{display:flex; justify-content:space-between; align-items:baseline; margin:0 0 6px; font:700 .9rem var(--body)}
+.progress .sum span{color:var(--soft); font-weight:600; font-size:.82rem}
+.progress ol{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+.progress li{display:grid; grid-template-columns:62px 1fr 64px; align-items:center; gap:8px; font-size:.82rem}
+.progress li b{font-weight:700}
+.progress .track{display:block; height:10px; border-radius:6px; border:1.2px solid var(--ink); background:#EFE5CC; overflow:hidden}
+.progress .fill{display:block; height:100%; width:0; background:repeating-linear-gradient(-45deg,var(--green) 0 6px,#3F9A5E 6px 12px); transition:width .9s linear}
+.progress li[data-state=queued] .fill{width:0}
+.progress li[data-state=done] .fill{width:100%; background:var(--green)}
+.progress li[data-state=error] .fill{width:100%; background:var(--bad)}
+.progress li .st{color:var(--soft); text-align:right; white-space:nowrap}
+.progress li[data-state=error] .st{color:var(--bad); font-weight:700}
+@media (prefers-reduced-motion:reduce){ .progress .fill{transition:none} }
+
 /* ---------- reading mode ---------- */
 body.reading .rail, body.reading .controls, body.reading .prop{display:none}
 body.reading .app{grid-template-columns:1fr}
@@ -386,6 +420,12 @@ body.reading{--pw:clamp(240px, calc((100vh - 250px) * .6667), 560px)}
 
     <details class="card desk" id="deskbox" open>
       <summary><span class="display">Make your book</span><span class="script">it takes about a minute</span></summary>
+      {% if user %}
+      <div class="account">
+        {% if user.picture %}<img src="{{ user.picture }}" alt="" referrerpolicy="no-referrer">{% else %}<span class="initial" aria-hidden="true">{{ (user.name or user.email)[:1]|upper }}</span>{% endif %}
+        <span class="who"><b>{{ user.name or user.email }}</b><small>Your book is saved to this account</small></span>
+        <form method="post" action="/logout"><button class="linkish" type="submit">Sign out</button></form>
+      </div>
       <form id="desk" onsubmit="return false">
         <label class="polaroid" id="drop">
           <span class="tape" aria-hidden="true"></span>
@@ -417,8 +457,24 @@ body.reading{--pw:clamp(240px, calc((100vh - 250px) * .6667), 560px)}
           Download PDF
           <svg class="sparkle" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 0 L8.4 5.6 L14 7 L8.4 8.4 L7 14 L5.6 8.4 L0 7 L5.6 5.6 Z" fill="#fff"/></svg>
         </button>
+        <div class="progress" id="progress" hidden aria-label="Drawing progress">
+          <p class="sum"><b id="progress-sum">Drawing your book</b><span id="progress-eta"></span></p>
+          <ol id="progress-list"></ol>
+        </div>
         <p id="status" role="status" aria-live="polite"></p>
       </form>
+      {% else %}
+      <div class="signin">
+        <h2 class="display">Sign in to start</h2>
+        <p>Your book is saved to your Google account, so it's still here when you come back.</p>
+        {% if signin_error %}<p class="err">Sign-in didn't finish. Try again.</p>{% endif %}
+        <a class="gbtn" href="/login">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
+          Sign in with Google
+        </a>
+        {% if dev_login %}<a class="gbtn" href="/login/dev">Local test sign-in</a>{% endif %}
+      </div>
+      {% endif %}
     </details>
 
     <section class="card cast" id="ref" data-state="idle" aria-label="The cast">
@@ -560,16 +616,16 @@ const LABEL = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.l
 const TITLE = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.title]));
 const FOLIO = Object.fromEntries(SHEETS.map(id => [id, $("page-" + id).dataset.folio]));
 const drop = $("drop"), photo = $("photo"), make = $("make"), download = $("download"), status = $("status");
-const book = { ref: null, pages: {} };
-const busy = new Set();
 const narrow = matchMedia("(max-width: 900px)");
 let current = 0;  // index into SHEETS of a page in view
 
 // ---------- photo ----------
+if (drop) {
 photo.addEventListener("change", showPreview);
 ["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
 ["dragleave","drop"].forEach(e => drop.addEventListener(e, () => drop.classList.remove("over")));
 drop.addEventListener("drop", ev => { ev.preventDefault(); if (ev.dataTransfer.files[0]) { photo.files = ev.dataTransfer.files; showPreview(); } });
+}
 function showPreview() {
   const f = photo.files[0];
   if (!f) return;
@@ -630,40 +686,71 @@ $("reading").onclick = () => {
 };
 
 // ---------- state ----------
-function say(msg, isErr) { status.textContent = msg; status.className = isErr ? "err" : ""; }
+// The server holds the book: every picture, its state, and the About Me details. The page mirrors it.
+const SIGNED_IN = {{ 'true' if user else 'false' }};
+const SLOTS = ["ref", ...DRAWN];
+const SLOT_LABEL = { ref: "Cast", ...Object.fromEntries(DRAWN.map(id => [id, id === "cover" ? "Cover" : LABEL[id]])) };
+const known = {};  // slot -> {state, version, ...} last seen from the server
+let typical = { ref: 50, page: 45 }, pollTimer = null;
+
+function say(msg, isErr) { if (!status) return; status.textContent = msg; status.className = isErr ? "err" : ""; }
 function sheet(id) { return id === "ref" ? $("ref") : $("page-" + id); }
 const node = id => document.querySelector(`.node[data-go="${id}"]`);
+const has = id => (known[id]?.version || 0) > 0;
+const isBusy = id => ["queued", "drawing"].includes(known[id]?.state);
+const anyBusy = () => SLOTS.some(isBusy);
+const val = id => $(id) ? $(id).value.trim() : "";
 function setState(id, state, msg) {
   sheet(id).dataset.state = state;
   $("state-" + id).textContent = msg || "Inking...";
   if (node(id)) node(id).dataset.state = state;
 }
 function updateAbout() {
-  const name = $("name").value.trim(), age = $("age").value.trim(), fav = $("favorites").value.trim();
+  const name = val("name"), age = val("age"), fav = val("favorites");
   $("cover-name").textContent = `starring ${name || "your child"}`;
   $("about-name").textContent = name || "Your child's name";
   $("about-age").textContent = age ? `Age ${age}` : "";
   $("about-fav-label").hidden = !fav;
   $("about-fav").textContent = fav;
-  const ready = !!name && DRAWN.every(id => book.pages[id]);
+  const ready = !!name && DRAWN.every(has);
   $("page-about").dataset.state = node("about").dataset.state = ready ? "done" : "idle";
 }
 function refresh() {
-  make.disabled = busy.size > 0;
+  if (make) make.disabled = !SIGNED_IN || anyBusy();
   DRAWN.forEach(id => {
     const b = document.querySelector(`[data-redraw="${id}"]`);
-    b.disabled = !book.ref || busy.has(id) || busy.has("ref");
-    b.textContent = `${book.pages[id] ? "Redraw" : "Draw"} ${LABEL[id].toLowerCase()}`;
-    document.querySelector(`[data-change="${id}"]`).disabled = busy.has(id);
+    b.disabled = !SIGNED_IN || !has("ref") || isBusy(id) || isBusy("ref");
+    b.textContent = `${has(id) ? "Redraw" : "Draw"} ${LABEL[id].toLowerCase()}`;
+    document.querySelector(`[data-change="${id}"]`).disabled = !SIGNED_IN || isBusy(id) || !has(id);
   });
-  const done = DRAWN.every(id => book.pages[id]);
-  download.disabled = busy.size > 0 || !done;
-  download.classList.toggle("ready", done && busy.size === 0);
+  const done = DRAWN.every(has);
+  if (download) {
+    download.disabled = anyBusy() || !done;
+    download.classList.toggle("ready", done && !anyBusy());
+  }
   updateAbout();
 }
-["name", "age", "favorites"].forEach(id => $(id).addEventListener("input", updateAbout));
 
-// ---------- images ----------
+// About Me details are saved as you type, so they come back with the book.
+let saveTimer = null;
+["name", "age", "favorites"].forEach(id => $(id)?.addEventListener("input", () => {
+  updateAbout();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => api("/api/details", { json: { name: val("name"), age: val("age"), favorites: val("favorites") } })
+    .catch(e => say(e.message, true)), 600);
+}));
+
+// ---------- talking to the server ----------
+async function api(url, { form, json } = {}) {
+  const opts = { method: form || json ? "POST" : "GET", headers: {} };
+  if (form) { const fd = new FormData(); for (const [k, v] of Object.entries(form)) v instanceof Blob ? fd.append(k, v, k + ".jpg") : fd.append(k, v); opts.body = fd; }
+  if (json) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(json); }
+  const r = await fetch(url, opts);
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { location.reload(); throw new Error("Sign in again."); }
+  if (!r.ok) throw new Error(j.error || `The server didn't answer properly (HTTP ${r.status}). Wait a minute and try again.`);
+  return j;
+}
 // Phone photos are large; downscale to 1024px JPEG in the browser before uploading.
 async function shrink(file) {
   try {
@@ -676,97 +763,120 @@ async function shrink(file) {
     return blob || file;
   } catch (e) { return file; }
 }
-// JPEG copy of a generated image, so the PDF request stays small.
-async function toJpeg(dataUrl) {
-  const img = new Image(); img.src = dataUrl; await img.decode();
-  const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
-  c.getContext("2d").drawImage(img, 0, 0);
-  return c.toDataURL("image/jpeg", 0.9);
-}
-const blobOf = dataUrl => fetch(dataUrl).then(r => r.blob());
 
-async function post(url, fields) {
-  const fd = new FormData();
-  for (const [k, v] of Object.entries(fields)) v instanceof Blob ? fd.append(k, v, k + ".img") : fd.append(k, v);
-  const r = await fetch(url, { method: "POST", body: fd });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || `The server didn't answer properly (HTTP ${r.status}). Wait a minute and try again.`);
-  return j.image;
-}
-
-async function task(id, work) {
-  busy.add(id); setState(id, "loading"); refresh();
-  try {
-    const image = await work();
+// Apply what the server says about each picture: new art, loading sketches, errors.
+function apply(slots, { first = false } = {}) {
+  for (const id of SLOTS) {
+    const now = slots[id], before = known[id] || { state: "idle", version: 0 };
+    known[id] = now;
     const el = sheet(id);
-    el.querySelector(".frame > img").src = image;
-    if (id === "ref") {
-      book.ref = image;
-      $("about-portrait").style.backgroundImage = `url(${image})`;
-      $("about-portrait").classList.add("has");
-    } else {
-      book.pages[id] = image;
-      node(id).querySelector(".thumb img").src = image;
+    if (now.version && now.version !== before.version) {
+      const src = `/img/${id}?v=${now.version}`;
+      el.querySelector(".frame > img").src = src;
+      if (id === "ref") { $("about-portrait").style.backgroundImage = `url(${src})`; $("about-portrait").classList.add("has"); }
+      else node(id).querySelector(".thumb img").src = src;
+      if (!first) { el.classList.remove("fresh"); void el.offsetWidth; el.classList.add("fresh"); }  // replay the color wash
     }
-    setState(id, "done");
-    el.classList.remove("fresh"); void el.offsetWidth; el.classList.add("fresh");  // replay the color wash
-  } catch (e) {
-    const previous = id === "ref" ? book.ref : book.pages[id];
-    setState(id, previous ? "done" : "error", "Not drawn");  // a failed redraw keeps the old picture
-    throw e;
-  } finally { busy.delete(id); refresh(); }
+    if (isBusy(id)) setState(id, "loading", now.state === "queued" ? "Waiting..." : "Inking...");
+    else if (now.state === "error") setState(id, now.version ? "done" : "error", "Not drawn");  // a failed redraw keeps the old picture
+    else setState(id, now.version ? "done" : "idle");
+  }
+  drawProgress();
+  refresh();
 }
-const drawPage = id => task(id, async () => post("/page", { page: id, reference: await blobOf(book.ref) }));
 
-make.onclick = async () => {
+// ---------- progress: one bar per picture, estimated from how long pictures usually take ----------
+let progressShownFor = null;  // the set of slots in the current run, so finished bars stay visible until the run ends
+function drawProgress() {
+  const running = SLOTS.filter(isBusy);
+  if (running.length && !progressShownFor) progressShownFor = new Set(running);
+  if (running.length) running.forEach(id => progressShownFor.add(id));
+  const box = $("progress");
+  if (!box) return;
+  if (!progressShownFor) { box.hidden = true; return; }
+  const ids = SLOTS.filter(id => progressShownFor.has(id));
+  box.hidden = false;
+  let sum = 0, left = 0;
+  $("progress-list").innerHTML = ids.map(id => {
+    const k = known[id], t = id === "ref" ? typical.ref : typical.page;
+    let frac = 0, st = "waiting";
+    if (k.state === "drawing") { frac = Math.min(0.95, k.elapsed / t); st = `drawing ${Math.round(k.elapsed)}s`; left = Math.max(left, t - k.elapsed); }
+    else if (k.state === "queued") { st = id === "ref" ? "starting" : "waiting"; left = Math.max(left, (isBusy("ref") ? typical.ref : 0) + t); }
+    else if (k.state === "error") { frac = 1; st = "failed"; }
+    else if (k.state === "done") { frac = 1; st = "done"; }
+    sum += frac;
+    return `<li data-state="${k.state}"><b>${SLOT_LABEL[id]}</b><span class="track"><span class="fill" style="width:${(frac * 100).toFixed(1)}%"></span></span><span class="st">${st}</span></li>`;
+  }).join("");
+  const done = ids.filter(id => known[id].state === "done").length;
+  $("progress-sum").textContent = running.length ? `${done} of ${ids.length} pictures drawn` : `All ${ids.length} finished`;
+  $("progress-eta").textContent = running.length ? (left > 5 ? `about ${Math.ceil(left / 5) * 5}s left` : "almost there") : "";
+  if (!running.length) {
+    const failed = ids.filter(id => known[id].state === "error");
+    say(failed.length ? failed.map(id => `${SLOT_LABEL[id]}: ${known[id].error}`).join(" ") : "Done. Turn the pages, then download the PDF.", failed.length > 0);
+    progressShownFor = null;
+    setTimeout(() => { if (!anyBusy()) box.hidden = true; }, 6000);
+  }
+}
+
+async function poll() {
+  clearTimeout(pollTimer);
+  try {
+    const j = await api("/api/book");
+    typical = j.typical;
+    apply(j.slots);
+  } catch (e) { say(e.message, true); }
+  if (anyBusy()) pollTimer = setTimeout(poll, 1500);
+}
+
+async function load() {
+  if (!SIGNED_IN) { refresh(); return; }
+  try {
+    const j = await api("/api/book");
+    typical = j.typical;
+    for (const k of ["name", "age", "favorites"]) if ($(k) && j.details[k]) $(k).value = j.details[k];
+    apply(j.slots, { first: true });
+    if (anyBusy()) { say("Your book is still being drawn."); poll(); }
+    else if (DRAWN.some(has)) say("Welcome back. Your book is just as you left it.");
+  } catch (e) { say(e.message, true); }
+}
+
+// ---------- actions ----------
+if (make) make.onclick = async () => {
   const file = photo.files[0];
   if (!file) { say("Choose a photo first.", true); photo.focus(); return; }
-  if (!$("name").value.trim()) { say("Write the child's name on the bookplate first.", true); $("name").focus(); return; }
-  book.pages = {};
-  DRAWN.forEach(id => { setState(id, "idle"); node(id).querySelector(".thumb img").removeAttribute("src"); });
+  if (!val("name")) { say("Write the child's name on the bookplate first.", true); $("name").focus(); return; }
   show("cover");
   if (narrow.matches) { $("deskbox").open = false; document.querySelector(".book").scrollIntoView({ behavior: "smooth" }); }
-  say("Drawing the cast first. This takes about a minute.");
+  make.disabled = true;
   try {
-    await task("ref", async () => post("/reference", { photo: await shrink(file) }));
-  } catch (e) { say(`The cast: ${e.message}`, true); return; }
-  say("Drawing the cover and all three pages. This takes about a minute.");
-  // One request per page, sent together. Each request makes exactly one API call; no retries.
-  const results = await Promise.allSettled(DRAWN.map(drawPage));
-  const failed = results.map((r, i) => r.status === "rejected" ? `${LABEL[DRAWN[i]]}: ${r.reason.message}` : null).filter(Boolean);
-  say(failed.length ? failed.join(" ") : "Done. Turn the pages, then download the PDF.", failed.length > 0);
+    await api("/book", { form: { photo: await shrink(file), name: val("name"), age: val("age"), favorites: val("favorites") } });
+    say("Drawing the cast first, then the cover and all three pages at once.");
+    poll();
+  } catch (e) { say(e.message, true); refresh(); }
 };
 
 document.querySelectorAll("[data-redraw]").forEach(b => b.onclick = async () => {
   const id = b.dataset.redraw;
-  say(`Redrawing the ${LABEL[id].toLowerCase()}.`);
-  try { await drawPage(id); say(`${LABEL[id]} is redrawn.`); }
+  try { await api("/page", { form: { page: id } }); say(`Redrawing the ${LABEL[id].toLowerCase()}.`); poll(); }
   catch (e) { say(`${LABEL[id]}: ${e.message}`, true); }
 });
 
 document.querySelectorAll("[data-change]").forEach(b => b.onclick = async () => {
   const id = b.dataset.change, input = document.querySelector(`[data-change-input="${id}"]`);
   const change = input.value.trim();
-  if (!book.pages[id]) { say(`Draw the ${LABEL[id].toLowerCase()} before changing it.`, true); return; }
+  if (!has(id)) { say(`Draw the ${LABEL[id].toLowerCase()} before changing it.`, true); return; }
   if (!change) { say("Describe the one thing to change.", true); input.focus(); return; }
-  say(`Changing the ${LABEL[id].toLowerCase()}.`);
-  try {
-    await task(id, async () => post("/page", { page: id, change, current: await blobOf(book.pages[id]) }));
-    input.value = "";
-    say(`${LABEL[id]} is updated.`);
-  } catch (e) { say(`${LABEL[id]}: ${e.message}`, true); }
+  try { await api("/page", { form: { page: id, change } }); input.value = ""; say(`Changing the ${LABEL[id].toLowerCase()}.`); poll(); }
+  catch (e) { say(`${LABEL[id]}: ${e.message}`, true); }
 });
 
-download.onclick = async () => {
-  const name = $("name").value.trim();
-  if (!name) { say("Write the child's name on the bookplate for the About Me page.", true); $("name").focus(); return; }
+if (download) download.onclick = async () => {
+  if (!val("name")) { say("Write the child's name on the bookplate for the About Me page.", true); $("name").focus(); return; }
   download.disabled = true; say("Binding the book...");
   try {
-    const pages = {};
-    for (const id of DRAWN) pages[id] = await toJpeg(book.pages[id]);
-    const r = await fetch("/pdf", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, age: $("age").value.trim(), favorites: $("favorites").value.trim(),
-                             reference: await toJpeg(book.ref), pages }) });
+    clearTimeout(saveTimer);
+    await api("/api/details", { json: { name: val("name"), age: val("age"), favorites: val("favorites") } });
+    const r = await fetch("/book.pdf");
     if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `The PDF could not be made (HTTP ${r.status}). Try again.`); }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(await r.blob()); a.download = "JackAndTheBeanstalk.pdf"; a.click();
@@ -776,7 +886,8 @@ download.onclick = async () => {
 };
 
 render();
-refresh();
+SLOTS.forEach(id => known[id] = { state: "idle", version: 0 });
+load();
 </script>
 </body>
 </html>

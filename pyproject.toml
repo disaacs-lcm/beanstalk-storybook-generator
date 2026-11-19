@@ -10,4 +10,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "reportlab>=4.2",
     "pillow>=10.0",
+    "authlib>=1.9.9",
+    "sqlalchemy>=2.1.9",
+    "psycopg[binary]>=3.3.9",
 ]

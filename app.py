@@ -1,26 +1,53 @@
 import base64
 import io
+import logging
 import os
+import random
+import secrets
 import threading
 import time
-from collections import defaultdict, deque
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
+from functools import wraps
 
 import requests
+from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_file
-from PIL import Image
+from flask import Flask, g, jsonify, redirect, render_template, request, send_file, session, url_for
+from PIL import Image, ImageDraw
 from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-load_dotenv()  # reads .env locally; on Render the key comes from its environment settings
+load_dotenv()  # reads .env locally; on Render the keys come from its environment settings
+
+import store  # noqa: E402  (after load_dotenv, so DATABASE_URL is set)
+
+# ---------- logging: one line per request and per image call, to stdout (Render keeps it in its Logs tab) ----------
+logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"),
+                    format="%(asctime)s %(levelname)s %(name)s %(message)s")
+log = logging.getLogger("storybook")
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024  # room for 4 page images when building the PDF
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # Render's proxy terminates HTTPS
+app.config.update(
+    MAX_CONTENT_LENGTH=25 * 1024 * 1024,
+    SECRET_KEY=os.environ.get("SECRET_KEY") or secrets.token_hex(32),
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "1" if os.environ.get("RENDER") else "0") == "1",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
+if not os.environ.get("SECRET_KEY"):
+    log.warning("SECRET_KEY is not set; sign-ins will not survive a restart")
 
 IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gpt-image-2.5-flare")
 IMAGE_QUALITY = os.environ.get("IMAGE_QUALITY", "low")
+# "openai" draws real pictures. "fake" draws small placeholder images locally after a short delay: free, for testing
+# the progress bar, the database and the PDF without spending tokens.
+IMAGE_PROVIDER = os.environ.get("IMAGE_PROVIDER", "openai")
 PAGE_SIZE = "1024x1536"       # portrait: one book page
 REFERENCE_SIZE = "1536x1024"  # landscape: Jack's and his mother's faces side by side
 API_URL = "https://api.openai.com/v1/images/edits"
@@ -173,30 +200,6 @@ def edit_prompt(change):
     )
 
 
-# Per-visitor limit on images (a book is 5: the reference, the cover, and 3 pages). In memory, so it resets on restart.
-RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "100"))
-_hits = defaultdict(deque)
-_hits_lock = threading.Lock()
-
-
-def client_ip():
-    # Render sits behind Cloudflare, which sets CF-Connecting-IP and overwrites any value the client sends.
-    return request.headers.get("CF-Connecting-IP") or request.remote_addr or "unknown"
-
-
-def seconds_until_allowed(ip):
-    """Record a hit for this IP and return 0, or return how long to wait if the hourly limit is used up."""
-    now = time.monotonic()
-    with _hits_lock:
-        hits = _hits[ip]
-        while hits and now - hits[0] >= 3600:
-            hits.popleft()
-        if len(hits) >= RATE_LIMIT_PER_HOUR:
-            return 3600 - (now - hits[0])
-        hits.append(now)
-        return 0
-
-
 def sniff_image(data):
     """Identify the image type from its first bytes instead of trusting the browser's MIME type."""
     if data[:3] == b"\xff\xd8\xff":
@@ -216,16 +219,40 @@ def read_image(field):
     f = request.files.get(field)
     data = f.read() if f is not None else b""
     if not data:
-        raise InputError("No photo was received. Choose your photo again." if field == "photo"
-                         else f"The {field} image was missing. Start the book again.")
+        raise InputError("No photo was received. Choose your photo again.")
     kind = sniff_image(data)
     if kind is None:
         raise InputError("Upload a JPEG, PNG, or WebP photo (HEIC from iPhones is not supported).")
     return data, kind
 
 
-def generate_image(prompt, image, kind, size=PAGE_SIZE):
-    """Exactly one image API call per request; no retries or loops."""
+def to_jpeg(png_bytes, quality=90):
+    """Stored and re-sent as JPEG: about a fifth the size of the PNG the API returns."""
+    out = io.BytesIO()
+    Image.open(io.BytesIO(png_bytes)).convert("RGB").save(out, "JPEG", quality=quality)
+    return out.getvalue()
+
+
+def fake_image(slot, size):
+    """Free stand-in for the image API: a small labelled placeholder, after a realistic-ish delay."""
+    time.sleep(random.uniform(3, 9))
+    w, h = (int(n) // 3 for n in size.split("x"))  # low-res: 512x341 or 341x512
+    hue = random.randint(0, 255)
+    im = Image.new("RGB", (w, h), (120 + hue // 3, 160, 220 - hue // 3))
+    d = ImageDraw.Draw(im)
+    for y in range(h):
+        d.line([(0, y), (w, y)], fill=(120 + hue // 3, 160 + y * 60 // h, 220 - hue // 3))
+    d.ellipse((w // 2 - 40, h // 2 - 60, w // 2 + 40, h // 2 + 20), fill=(255, 224, 189), outline=(42, 36, 56), width=3)
+    d.text((12, 12), f"TEST IMAGE: {slot}", fill=(42, 36, 56))
+    out = io.BytesIO()
+    im.save(out, "PNG")
+    return out.getvalue()
+
+
+def call_image_api(prompt, image, kind, size, slot):
+    """Exactly one image API call; no retries or loops. Returns PNG bytes."""
+    if IMAGE_PROVIDER == "fake":
+        return fake_image(slot, size)
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         raise RuntimeError("Server is missing OPENAI_API_KEY.")
@@ -246,65 +273,316 @@ def generate_image(prompt, image, kind, size=PAGE_SIZE):
             msg = ("OpenAI's safety filter refused this image. Try a different photo: one person, a clear, "
                    f"well-lit face, nothing else in frame. ({msg})")
         raise RuntimeError(msg)
-    return "data:image/png;base64," + resp.json()["data"][0]["b64_json"]
+    return base64.b64decode(resp.json()["data"][0]["b64_json"])
 
 
-def limited():
-    wait = seconds_until_allowed(client_ip())
-    if not wait:
+def draw_slot(user_id, slot, prompt, image, kind, size=PAGE_SIZE):
+    """Draw one picture and save it. Runs on a worker thread; every outcome lands in the database and the log."""
+    store.set_slot(user_id, slot, state="drawing", error="", started_at=store.now())
+    event = store.log_event("image", user_id, slot, detail=f"provider={IMAGE_PROVIDER} model={IMAGE_MODEL}")
+    t0 = time.monotonic()
+    try:
+        png = call_image_api(prompt, image, kind, size, slot)
+        jpeg = to_jpeg(png)
+    except Exception as e:  # noqa: BLE001  any failure becomes a message on that one picture
+        secs = time.monotonic() - t0
+        msg = str(e) if isinstance(e, RuntimeError) else "Something went wrong drawing this picture."
+        log.warning("image failed user=%s slot=%s seconds=%.1f error=%r", user_id, slot, secs, str(e)[:300])
+        if not isinstance(e, RuntimeError):
+            log.exception("unexpected error drawing user=%s slot=%s", user_id, slot)
+        store.finish_event(event, False, secs, msg)
+        store.set_slot(user_id, slot, state="error", error=msg)
         return None
-    minutes = int(wait // 60) + 1
-    return jsonify(error=f"You've reached the limit of {RATE_LIMIT_PER_HOUR} images per hour. "
-                         f"Try again in {minutes} minute{'s' if minutes != 1 else ''}."), 429
+    secs = time.monotonic() - t0
+    log.info("image done user=%s slot=%s seconds=%.1f bytes=%d", user_id, slot, secs, len(jpeg))
+    store.finish_event(event, True, secs)
+    store.set_slot(user_id, slot, state="done", image=jpeg, error="")
+    return jpeg
 
+
+def draw_page_from_reference(user_id, page, ref_jpeg):
+    data = reference_for(page, ref_jpeg)
+    kind = ("image/jpeg", "jpg") if "mother" in page["cast"] else ("image/png", "png")
+    return draw_slot(user_id, page["id"], page_prompt(page), data, kind)
+
+
+# Pictures are drawn on background threads so a page refresh, or closing the tab, doesn't stop the book.
+# The cover and the pages only need the reference, so once it exists they're all drawn at the same time.
+DRAWN_IDS = [COVER["id"]] + [p["id"] for p in PAGES]
+SLOT_IDS = ["ref"] + DRAWN_IDS
+workers = ThreadPoolExecutor(max_workers=int(os.environ.get("IMAGE_THREADS", "8")), thread_name_prefix="draw")
+
+
+def make_book_job(user_id, photo, kind):
+    t0 = time.monotonic()
+    ref = draw_slot(user_id, "ref", REFERENCE_PROMPT, photo, kind, size=REFERENCE_SIZE)
+    if ref is None:
+        for sid in DRAWN_IDS:
+            store.set_slot(user_id, sid, state="error", error="The cast couldn't be drawn, so this page wasn't started.")
+        return
+    futures = [workers.submit(draw_page_from_reference, user_id, PAGES_BY_ID[sid], ref) for sid in DRAWN_IDS]
+    ok = sum(f.result() is not None for f in futures)
+    log.info("book done user=%s pages_ok=%d/%d seconds=%.1f", user_id, ok, len(DRAWN_IDS), time.monotonic() - t0)
+
+
+def run_in_background(fn, *args):
+    def safe():
+        try:
+            fn(*args)
+        except Exception:  # noqa: BLE001
+            log.exception("background job failed")
+    threading.Thread(target=safe, daemon=True, name="book").start()
+
+
+# ---------- sign-in with Google ----------
+
+oauth = OAuth(app)
+oauth.register(
+    "google",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+# Local testing without Google credentials: DEV_LOGIN=1 adds /login/dev, which only answers on localhost.
+DEV_LOGIN = os.environ.get("DEV_LOGIN") == "1" and not os.environ.get("RENDER")
+
+
+def current_user():
+    if "user" not in g:
+        uid = session.get("uid")
+        g.user = store.get_user(uid) if uid else None
+    return g.user
+
+
+def login_required(view):
+    @wraps(view)
+    def wrapped(*a, **kw):
+        if current_user() is None:
+            return jsonify(error="Sign in with Google first."), 401
+        return view(*a, **kw)
+    return wrapped
+
+
+def sign_in(sub, email, name, picture):
+    user = store.upsert_user(sub, email, name, picture)
+    session.clear()
+    session.permanent = True
+    session["uid"] = user.id
+    store.log_event("login", user.id, detail=email)
+    log.info("login user=%s", user.id)
+
+
+@app.get("/login")
+def login():
+    if not os.environ.get("GOOGLE_CLIENT_ID"):
+        return "Google sign-in isn't configured (GOOGLE_CLIENT_ID is missing).", 503
+    return oauth.google.authorize_redirect(url_for("auth_callback", _external=True), prompt="select_account")
+
+
+@app.get("/auth/callback")
+def auth_callback():
+    try:
+        token = oauth.google.authorize_access_token()
+    except Exception as e:  # noqa: BLE001  e.g. the user pressed Cancel, or a stale state cookie
+        log.warning("login failed error=%r", str(e)[:300])
+        return redirect(url_for("index", signin="failed"))
+    info = token.get("userinfo") or {}
+    if not info.get("email_verified", True):
+        return redirect(url_for("index", signin="unverified"))
+    sign_in(info["sub"], info.get("email", ""), info.get("name", ""), info.get("picture", ""))
+    return redirect(url_for("index"))
+
+
+@app.get("/login/dev")
+def login_dev():
+    if not DEV_LOGIN or request.host.split(":")[0] not in ("localhost", "127.0.0.1"):
+        return "Not found", 404
+    sign_in("dev-" + request.args.get("as", "tester"), "tester@localhost", "Local Tester", "")
+    return redirect(url_for("index"))
+
+
+@app.post("/logout")
+def logout():
+    log.info("logout user=%s", session.get("uid"))
+    session.clear()
+    return redirect(url_for("index"))
+
+
+# ---------- request logging ----------
+
+@app.before_request
+def start_timer():
+    g.t0 = time.monotonic()
+    g.rid = uuid.uuid4().hex[:8]
+
+
+@app.after_request
+def log_request(resp):
+    if request.path.startswith("/static/"):
+        return resp
+    ms = (time.monotonic() - g.get("t0", time.monotonic())) * 1000
+    level = logging.DEBUG if request.path in ("/api/book", "/healthz") or request.path.startswith("/img/") else logging.INFO
+    log.log(level, "rid=%s %s %s status=%s ms=%.0f user=%s ip=%s", g.get("rid"), request.method, request.path,
+            resp.status_code, ms, session.get("uid"), request.headers.get("CF-Connecting-IP") or request.remote_addr)
+    return resp
+
+
+@app.errorhandler(Exception)
+def unhandled(e):
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+    log.exception("rid=%s unhandled error on %s", g.get("rid"), request.path)
+    return jsonify(error="Something went wrong on the server. Try again."), 500
+
+
+# ---------- rate limit: per signed-in user, counted from the event log so it survives restarts ----------
+
+RATE_LIMIT_PER_HOUR = int(os.environ.get("RATE_LIMIT_PER_HOUR", "100"))
+
+
+def over_limit(user_id, needed):
+    used = store.images_in_last_hour(user_id)
+    if used + needed <= RATE_LIMIT_PER_HOUR:
+        return None
+    log.info("rate limited user=%s used=%d needed=%d", user_id, used, needed)
+    return jsonify(error=f"You've reached the limit of {RATE_LIMIT_PER_HOUR} pictures per hour. "
+                         "Try again later."), 429
+
+
+STALE_AFTER = 300  # a picture "drawing" for longer than this was cut off by a restart
+
+
+def slot_view(x):
+    if x is None:
+        return {"state": "idle", "version": 0, "error": "", "elapsed": 0}
+    state, error, elapsed = x.state, x.error, 0
+    if state in ("queued", "drawing") and x.started_at:
+        elapsed = (store.now() - store.aware(x.started_at)).total_seconds()
+        if elapsed > STALE_AFTER:
+            state, error = ("done" if x.image else "error"), "The server restarted while drawing this. Redraw it."
+    return {"state": state, "version": x.version or 0, "error": error,
+            "elapsed": round(elapsed, 1) if state == "drawing" else 0}
+
+
+def busy(slots):
+    return any(slot_view(x)["state"] in ("queued", "drawing") for x in slots.values())
+
+
+# ---------- pages ----------
 
 @app.get("/")
 def index():
-    return render_template("index.html", cover=COVER, pages=PAGES)
+    user = current_user()
+    return render_template("index.html", cover=COVER, pages=PAGES, user=user,
+                           signin_error=request.args.get("signin"), dev_login=DEV_LOGIN)
 
 
-@app.post("/reference")
-def reference():
-    """Step 0: turn the uploaded photo into one face reference (Jack and his mother) that every page reuses."""
+@app.get("/healthz")
+def healthz():
+    return "ok"
+
+
+@app.get("/api/book")
+@login_required
+def api_book():
+    """Everything the page needs to restore the book, and the progress of anything still drawing."""
+    uid = current_user().id
+    book, slots = store.get_book(uid)
+    fake = IMAGE_PROVIDER == "fake"
+    return jsonify(
+        details={"name": book.name, "age": book.age, "favorites": book.favorites},
+        slots={sid: slot_view(slots.get(sid)) for sid in SLOT_IDS},
+        typical={"ref": store.typical_seconds("ref", 6 if fake else 50),
+                 "page": store.typical_seconds("page", 6 if fake else 45)},
+    )
+
+
+def clean_details(body):
+    name = str(body.get("name") or "").strip()[:40]
+    age = str(body.get("age") or "").strip()[:3]
+    favorites = str(body.get("favorites") or "").strip()[:300]
+    if age and not age.isdigit():
+        raise InputError("Age should be a number.")
+    return name, age, favorites
+
+
+@app.post("/api/details")
+@login_required
+def api_details():
     try:
-        data, kind = read_image("photo")
+        store.save_details(current_user().id, *clean_details(request.get_json(silent=True) or {}))
     except InputError as e:
         return jsonify(error=str(e)), 400
-    if (resp := limited()):
-        return resp
+    return jsonify(ok=True)
+
+
+@app.get("/img/<slot>")
+@login_required
+def img(slot):
+    data = store.slot_image(current_user().id, slot) if slot in SLOT_IDS else None
+    if not data:
+        return "Not found", 404
+    resp = send_file(io.BytesIO(data), mimetype="image/jpeg")
+    resp.headers["Cache-Control"] = "private, max-age=31536000, immutable"  # the URL carries ?v=<version>
+    return resp
+
+
+@app.post("/book")
+@login_required
+def make_book():
+    """Start a new book: the cast first, then the cover and every page at the same time. Returns at once."""
+    uid = current_user().id
     try:
-        return jsonify(image=generate_image(REFERENCE_PROMPT, data, kind, size=REFERENCE_SIZE))
-    except RuntimeError as e:
-        return jsonify(error=str(e)), 502
+        photo, kind = read_image("photo")
+        name, age, favorites = clean_details(request.form)
+    except InputError as e:
+        return jsonify(error=str(e)), 400
+    if not name:
+        return jsonify(error="Write the child's name on the bookplate first."), 400
+    _, slots = store.get_book(uid)
+    if busy(slots):
+        return jsonify(error="Your book is still being drawn. Wait for it to finish."), 409
+    if (resp := over_limit(uid, len(SLOT_IDS))):
+        return resp
+    store.save_details(uid, name, age, favorites)
+    for sid in SLOT_IDS:
+        store.set_slot(uid, sid, state="queued", error="", started_at=store.now())
+    log.info("book started user=%s", uid)
+    run_in_background(make_book_job, uid, photo, kind)
+    return jsonify(ok=True), 202
 
 
 @app.post("/page")
+@login_required
 def page():
-    """Draw one page from the character reference, or edit an existing page when `change` is given."""
+    """Redraw one page from the saved cast reference, or edit it when `change` is given. Returns at once."""
+    uid = current_user().id
     p = PAGES_BY_ID.get(request.form.get("page"))
     if p is None:
         return jsonify(error="Unknown page. Reload and try again."), 400
     change = (request.form.get("change") or "").strip()
     if len(change) > 200:
         return jsonify(error="Keep the change to 200 characters or fewer."), 400
-    try:
-        if change:
-            data, kind = read_image("current")
-            prompt = edit_prompt(change)
-        else:
-            data, kind = read_image("reference")
-            data, kind = reference_for(p, data), (kind if "mother" in p["cast"] else ("image/png", "png"))
-            prompt = page_prompt(p)
-    except InputError as e:
-        return jsonify(error=str(e)), 400
-    if (resp := limited()):
+    _, slots = store.get_book(uid)
+    if slot_view(slots.get(p["id"]))["state"] in ("queued", "drawing") or slot_view(slots.get("ref"))["state"] in ("queued", "drawing"):
+        return jsonify(error="That page is already being drawn."), 409
+    if change:
+        current = store.slot_image(uid, p["id"])
+        if not current:
+            return jsonify(error="Draw this page before changing it."), 400
+        job = (draw_slot, uid, p["id"], edit_prompt(change), current, ("image/jpeg", "jpg"))
+    else:
+        ref = store.slot_image(uid, "ref")
+        if not ref:
+            return jsonify(error="Make the book first: the cast hasn't been drawn."), 400
+        job = (draw_page_from_reference, uid, p, ref)
+    if (resp := over_limit(uid, 1)):
         return resp
-    try:
-        return jsonify(image=generate_image(prompt, data, kind))
-    except RuntimeError as e:
-        return jsonify(error=str(e)), 502
-
-
+    store.set_slot(uid, p["id"], state="queued", error="", started_at=store.now())
+    workers.submit(*job)
+    return jsonify(ok=True), 202
 # ---------- PDF ----------
 
 PAGE_W, PAGE_H = 432, 648  # 6 x 9 inches, same 2:3 shape as the art
@@ -324,15 +602,6 @@ FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 for _name, _file in (("Andika", "Andika-Regular.ttf"), ("Andika-Bold", "Andika-Bold.ttf"),
                      ("Andika-Italic", "Andika-Italic.ttf")):
     pdfmetrics.registerFont(TTFont(_name, os.path.join(FONT_DIR, _file)))
-
-
-def decode_data_url(url):
-    if not isinstance(url, str) or "," not in url:
-        raise InputError("A page image is missing. Draw every page before downloading.")
-    data = base64.b64decode(url.split(",", 1)[1])
-    if sniff_image(data) is None:
-        raise InputError("A page image could not be read. Redraw it and try again.")
-    return data
 
 
 def draw_story_text(c, text, zone, tone):
@@ -428,27 +697,23 @@ def build_pdf(cover_img, images, reference_img, name, age, favorites):
     return buf
 
 
-@app.post("/pdf")
+@app.get("/book.pdf")
+@login_required
 def pdf():
-    body = request.get_json(silent=True) or {}
-    name = str(body.get("name") or "").strip()[:40]
-    age = str(body.get("age") or "").strip()[:3]
-    favorites = str(body.get("favorites") or "").strip()[:300]
-    if not name:
-        return jsonify(error="Type the child's name for the About Me page."), 400
-    if age and not age.isdigit():
-        return jsonify(error="Age should be a number."), 400
-    try:
-        drawn = body.get("pages") or {}
-        cover_img = decode_data_url(drawn.get("cover"))
-        images = [decode_data_url(drawn.get(p["id"])) for p in PAGES]
-        ref = decode_data_url(body["reference"]) if body.get("reference") else None
-    except InputError as e:
-        return jsonify(error=str(e)), 400
-    except ValueError:
-        return jsonify(error="A page image could not be read. Redraw it and try again."), 400
-    return send_file(build_pdf(cover_img, images, ref, name, age, favorites), mimetype="application/pdf",
-                     as_attachment=True, download_name="JackAndTheBeanstalk.pdf")
+    """Bind the saved book into a PDF: cover, pages, About Me."""
+    uid = current_user().id
+    book, slots = store.get_book(uid)
+    if not book.name:
+        return jsonify(error="Write the child's name on the bookplate for the About Me page."), 400
+    images = {sid: slots[sid].image if sid in slots else None for sid in SLOT_IDS}
+    missing = [sid for sid in DRAWN_IDS if not images[sid]]
+    if missing:
+        return jsonify(error="Draw every page before downloading."), 400
+    t0 = time.monotonic()
+    buf = build_pdf(images["cover"], [images[p["id"]] for p in PAGES], images["ref"], book.name, book.age,
+                    book.favorites)
+    store.log_event("pdf", uid, ok=True, seconds=time.monotonic() - t0)
+    return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="JackAndTheBeanstalk.pdf")
 
 
 if __name__ == "__main__":
