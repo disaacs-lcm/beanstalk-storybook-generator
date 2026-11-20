@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ title }} · Beanstalk Storybook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--desk:#F3E9D2; --paper:#FFFBF1; --ink:#2A2438; --soft:#5A5266; --green:#2F7D4A; --dusk:#34396B}
+*{box-sizing:border-box}
+body{margin:0; background:var(--desk); color:var(--ink); font:400 1.02rem/1.6 "Nunito",system-ui,sans-serif; padding:32px 16px 64px}
+main{max-width:720px; margin:0 auto; background:var(--paper); border:1.5px solid var(--ink); border-radius:16px; padding:28px clamp(18px,5vw,44px); box-shadow:0 10px 30px rgba(42,36,56,.15)}
+h1,h2{font-family:"Fraunces",Georgia,serif; font-variation-settings:"SOFT" 100,"WONK" 1; line-height:1.15}
+h1{font-size:2.1rem; margin:0 0 4px}
+h2{font-size:1.25rem; margin:28px 0 6px}
+.meta{color:var(--soft); margin:0 0 20px}
+a{color:var(--dusk)}
+.back{display:inline-block; margin:0 auto 18px; font-weight:700}
+.wrap{max-width:720px; margin:0 auto}
+ul{padding-left:1.2em}
+li{margin:4px 0}
+footer{max-width:720px; margin:18px auto 0; color:var(--soft); font-size:.9rem; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap"><a class="back" href="/">&larr; Back to the storybook</a></div>
+<main>
+<h1>{{ title }}</h1>
+<p class="meta">Beanstalk Storybook · Effective {{ effective }}</p>
+{% if page == "privacy" %}
+<p>Beanstalk Storybook (storybook.applycider.com) makes a personalized "Jack and the Beanstalk" picture book from a photo. It's a student project built for a university AI engineering course. This page explains what the service collects, why, and how to remove it.</p>
+
+<h2>What we collect</h2>
+<ul>
+  <li><b>Your Google account basics.</b> When you sign in with Google we receive your name, email address, profile picture and Google account ID. We use them only to sign you in and keep your book attached to your account. We don't get your Google password, and we don't ask for access to Gmail, Drive, Contacts or anything else.</li>
+  <li><b>The photo you upload.</b> It's sent to OpenAI to draw the book's character reference. We don't save the original photo; only the illustrations made from it are kept.</li>
+  <li><b>Your book.</b> The illustrations (character reference, cover and pages) and the details you type on the bookplate (name, age and favorite things) are stored so your book is still there when you come back.</li>
+  <li><b>Logs.</b> The server records each request (time, page, status, your account number and IP address) and each picture it draws (time taken, success or failure). We use these to fix problems, prevent abuse and enforce the hourly picture limit.</li>
+</ul>
+
+<h2>Cookies</h2>
+<p>We use one cookie: the sign-in session cookie that keeps you logged in, for up to 30 days. There are no advertising or analytics cookies, and no tracking across other sites.</p>
+
+<h2>Who else handles your data</h2>
+<ul>
+  <li><b>Google</b> handles sign-in.</li>
+  <li><b>OpenAI</b> draws the illustrations from your photo and the story prompts, through its API. Under OpenAI's API policies, this data isn't used to train its models and may be retained for up to 30 days for abuse monitoring.</li>
+  <li><b>Render</b> hosts the website and the database where your book is stored.</li>
+  <li><b>Cloudflare</b> provides the domain's DNS and network protection.</li>
+</ul>
+<p>We don't sell or rent your data, share it with advertisers, or use it for anything besides making and keeping your book.</p>
+
+<h2>Photos of children</h2>
+<p>The book is meant to star a child, so the photo is usually of one. Accounts are for parents, guardians and other adults. Only upload a photo you have the right to use, such as one of your own child or one taken with a parent's permission. The service isn't meant to be used by children under 13 on their own.</p>
+
+<h2>How long we keep it</h2>
+<p>Your book stays saved until you replace it by making a new book, or until you delete your account. Logs are kept for as long as they're useful for running the service. The site is a course project, so the service and everything stored in it may be shut down when the course ends.</p>
+
+<h2>Deleting your data</h2>
+<p>Once you're signed in, use <b>Delete my book and account</b> at the bottom of the left-hand panel. It immediately and permanently removes your account, your illustrations, your bookplate details, and the activity records tied to your account.{% if contact %} You can also email <a href="mailto:{{ contact }}">{{ contact }}</a> to ask for deletion.{% endif %} To also revoke the site's access on Google's side, visit <a href="https://myaccount.google.com/connections">your Google account connections</a>.</p>
+
+<h2>Security</h2>
+<p>The site is served only over HTTPS. Images are shown only to the signed-in account that made them. No system is perfectly secure, so don't upload anything you wouldn't want stored online.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the new version will appear on this page with a new effective date.</p>
+{% if contact %}<h2>Contact</h2><p><a href="mailto:{{ contact }}">{{ contact }}</a></p>{% endif %}
+
+{% else %}
+<p>These terms apply when you use Beanstalk Storybook (storybook.applycider.com), a student project built for a university AI engineering course. By using the site, you agree to them.</p>
+
+<h2>What the service is</h2>
+<p>You upload a photo, and the site uses AI image generation to draw a short "Jack and the Beanstalk" picture book starring the person in it, which you can download as a PDF. It's a free class project, not a commercial product.</p>
+
+<h2>Your account</h2>
+<p>You sign in with Google. You're responsible for activity on your account. You must be an adult, or a child using it with a parent or guardian.</p>
+
+<h2>Your photos</h2>
+<ul>
+  <li>Only upload photos you have the right to use. For a child, that means your own child, or a child whose parent or guardian has agreed.</li>
+  <li>Don't upload photos of people without their permission, or anything sexual, violent, hateful or otherwise inappropriate. Image requests also go through OpenAI's safety filters, which may refuse some photos.</li>
+</ul>
+
+<h2>The books you make</h2>
+<p>You may keep, print and share the books you make for personal, non-commercial use. "Jack and the Beanstalk" is a traditional folk tale; the illustrations are generated by AI and may contain mistakes or odd details, and they may not look exactly like the person in the photo.</p>
+
+<h2>Fair use</h2>
+<p>Each account can make a limited number of pictures per hour. Don't try to get around the limit, overload the site, or access other people's books.</p>
+
+<h2>No warranty</h2>
+<p>The service is provided "as is", with no guarantee that it will be available, error-free or kept running. It may change or shut down at any time, including when the course ends, and saved books may be lost. Keep a downloaded PDF of any book you care about.</p>
+
+<h2>Limitation of liability</h2>
+<p>To the extent the law allows, the site's author isn't liable for any damages arising from your use of the service.</p>
+
+<h2>Ending use</h2>
+<p>You can delete your account at any time from the storybook page. Accounts that break these terms may be removed.</p>
+
+<h2>Privacy</h2>
+<p>See the <a href="/privacy">Privacy Policy</a> for what's collected and how to delete it.</p>
+
+<h2>Changes</h2>
+<p>If these terms change, the new version will appear on this page with a new effective date.</p>
+{% endif %}
+</main>
+<footer><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></footer>
+</body>
+</html>

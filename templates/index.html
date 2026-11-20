@@ -334,6 +334,10 @@ li:nth-child(even) .node[data-state=done] .leaf{transform:scale(-1,1) rotate(-12
 .gbtn:active{transform:translateY(3px); box-shadow:0 1px 0 -1px var(--ink)}
 .gbtn + .gbtn{margin-top:12px}
 .signin .err{color:var(--bad); font-weight:700}
+.signin .fine{margin:14px 0 0; font-size:.85rem}
+.legal{margin:10px 0 0; text-align:center; font-size:.85rem; color:var(--soft)}
+.legal a,.legal .linkish{color:var(--soft); font-size:.85rem; font-weight:600}
+.legal .linkish{padding:0}
 
 /* ---------- progress: one growing vine per picture ---------- */
 .progress{margin:4px 0 12px; padding:10px 12px 8px; border:1.5px solid var(--ink); border-radius:12px; background:var(--paper)}
@@ -473,8 +477,10 @@ body.reading{--pw:clamp(240px, calc((100vh - 250px) * .6667), 560px)}
           Sign in with Google
         </a>
         {% if dev_login %}<a class="gbtn" href="/login/dev">Local test sign-in</a>{% endif %}
+        <p class="fine">By signing in you agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</p>
       </div>
       {% endif %}
+      <p class="legal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>{% if user %} · <button class="linkish" type="button" id="delete-account">Delete my book and account</button>{% endif %}</p>
     </details>
 
     <section class="card cast" id="ref" data-state="idle" aria-label="The cast">
@@ -884,6 +890,12 @@ if (download) download.onclick = async () => {
   } catch (e) { say(e.message, true); }
   refresh();
 };
+
+$("delete-account")?.addEventListener("click", async () => {
+  if (!confirm("Delete your book and your account? This removes every picture and detail and can't be undone.")) return;
+  try { await api("/account/delete", { json: {} }); location.href = "/"; }
+  catch (e) { say(e.message, true); }
+});
 
 render();
 SLOTS.forEach(id => known[id] = { state: "idle", version: 0 });

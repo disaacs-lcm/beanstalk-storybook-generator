@@ -479,6 +479,34 @@ def index():
                            signin_error=request.args.get("signin"), dev_login=DEV_LOGIN)
 
 
+LEGAL_EFFECTIVE = "November 19, 2026"
+
+
+@app.get("/privacy")
+def privacy():
+    return render_template("legal.html", page="privacy", title="Privacy Policy", effective=LEGAL_EFFECTIVE,
+                           contact=os.environ.get("CONTACT_EMAIL"))
+
+
+@app.get("/terms")
+def terms():
+    return render_template("legal.html", page="terms", title="Terms of Service", effective=LEGAL_EFFECTIVE,
+                           contact=os.environ.get("CONTACT_EMAIL"))
+
+
+@app.post("/account/delete")
+@login_required
+def delete_account():
+    uid = current_user().id
+    _, slots = store.get_book(uid)
+    if busy(slots):
+        return jsonify(error="Wait for your book to finish drawing, then delete it."), 409
+    store.delete_user(uid)
+    session.clear()
+    log.info("account deleted user=%s", uid)
+    return jsonify(ok=True)
+
+
 @app.get("/healthz")
 def healthz():
     return "ok"

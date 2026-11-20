@@ -141,6 +141,15 @@ def slot_image(user_id, slot):
         return x.image if x else None
 
 
+def delete_user(user_id):
+    """Remove the account and everything tied to it: pictures, bookplate details, activity records."""
+    with Session() as s:
+        for model in (Slot, Book, Event):
+            s.query(model).filter(model.user_id == user_id).delete()
+        s.query(User).filter(User.id == user_id).delete()
+        s.commit()
+
+
 def log_event(kind, user_id=None, slot="", ok=None, seconds=None, detail=""):
     with Session() as s:
         e = Event(kind=kind, user_id=user_id, slot=slot, ok=ok, seconds=seconds, detail=detail[:2000])
