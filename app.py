@@ -350,8 +350,11 @@ DEV_LOGIN = os.environ.get("DEV_LOGIN") == "1" and not os.environ.get("RENDER")
 
 def current_user():
     if "user" not in g:
-        uid = session.get("uid")
-        g.user = store.get_user(uid) if uid else None
+        uid, sub = session.get("uid"), session.get("sub")
+        user = store.get_user(uid) if uid and sub else None
+        # The cookie names both the account number and the Google account; both must match, so a cookie from a
+        # wiped or replaced database can never land in someone else's account.
+        g.user = user if user and user.google_sub == sub else None
     return g.user
 
 
@@ -369,6 +372,7 @@ def sign_in(sub, email, name, picture):
     session.clear()
     session.permanent = True
     session["uid"] = user.id
+    session["sub"] = user.google_sub
     store.log_event("login", user.id, detail=email)
     log.info("login user=%s", user.id)
 
