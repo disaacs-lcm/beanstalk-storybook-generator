@@ -509,7 +509,7 @@ def delete_account():
 
 @app.get("/healthz")
 def healthz():
-    return "ok"
+    return f"ok {store.engine.dialect.name}"
 
 
 @app.get("/api/book")

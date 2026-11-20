@@ -82,6 +82,8 @@ class Event(Base):
 
 
 Base.metadata.create_all(engine)
+import logging  # noqa: E402
+logging.getLogger("storybook").info("database=%s", engine.dialect.name)
 
 
 def aware(dt):
